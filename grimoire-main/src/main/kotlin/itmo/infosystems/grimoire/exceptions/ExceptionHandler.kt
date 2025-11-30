@@ -39,7 +39,8 @@ class ExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleUnknown(ex: Exception): ResponseEntity<Map<String, String>> {
-        return ResponseEntity.status(500).body(mapOf("error" to "Internal server error"))
+        return ResponseEntity.status(500).body(mapOf("error" to (ex.message ?: "Internal server error")))
+        //return ResponseEntity.status(500).body(mapOf("error" to "Internal server error"))
     }
 
     @ExceptionHandler(ResponseStatusException::class)

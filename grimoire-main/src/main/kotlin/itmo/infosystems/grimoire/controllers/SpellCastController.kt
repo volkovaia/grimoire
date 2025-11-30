@@ -60,23 +60,17 @@ class SpellCastController(private val spellCastService: SpellCastService) {
 //    }
 
     @GetMapping("/active/mine")
-    fun getMyActiveSpells(@AuthenticationPrincipal principal: Principal?): List<SpellCast> { // <-- ИСПРАВЛЕНО
-        val wizardId = principal?.name?.toLong()
-                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User must be authenticated")
-        return spellCastService.getActiveSpells(wizardId)
+    fun getMyActiveSpells(@AuthenticationPrincipal wizardId: String): List<SpellCast> {
+        return spellCastService.getActiveSpells(wizardId.toLong())
     }
-
-//    @GetMapping("/active/others")
+        //    @GetMapping("/active/others")
 //    fun getOthersActiveSpells(@AuthenticationPrincipal principal: Principal): List<SpellCast> {
 //        return spellCastService.getActiveSpellsFromWizardsWithLowerOrEqualGuildLevel(principal.name.toLong())
 //    }
-    @GetMapping("/active/others")
-    fun getOthersActiveSpells(@AuthenticationPrincipal principal: Principal?): List<SpellCast> { // <-- ИСПРАВЛЕНО
-        val wizardId = principal?.name?.toLong()
-                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User must be authenticated")
-        return spellCastService.getActiveSpellsFromWizardsWithLowerOrEqualGuildLevel(wizardId)
+        @GetMapping("/active/others")
+        fun getOthersActiveSpells(@AuthenticationPrincipal wizardId: String): List<SpellCast> {
+            return spellCastService.getActiveSpellsFromWizardsWithLowerOrEqualGuildLevel(wizardId.toLong())
+
+
+        }
     }
-
-
-
-}

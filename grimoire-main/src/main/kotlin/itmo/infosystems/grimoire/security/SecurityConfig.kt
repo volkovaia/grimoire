@@ -37,6 +37,7 @@ class SecurityConfig(
                         "/artifacts.html",
                         "/css/**",
                         "/js/**",
+                            "favicon.ico",
                         "/images/**", "/favicon.ico",
                         "/error"
                     ).permitAll()

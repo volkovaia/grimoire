@@ -16,27 +16,31 @@ import java.security.Principal
 class WizardController(private val wizardService: WizardService) {
 
     @GetMapping("/me")
-    fun getMe(principal: Principal?): ResponseEntity<Any> {
-        // 1. Проверка на то, что пользователь залогинен
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "Unauthorized"))
-        }
-
-        return try {
-            // 2. В токене у нас лежит ID (например, "2"), поэтому превращаем строку в Long
-            val wizardId = principal.name.toLong()
-
-            // 3. Ищем мага по ID, а не по логину
-            val wizard = wizardService.getWizard(wizardId)
-
-            ResponseEntity.ok(wizard)
-        } catch (e: NumberFormatException) {
-            // Это на случай, если вдруг в токене окажется не число
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Invalid token data"))
-        } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
-        }
+    fun getMe(@AuthenticationPrincipal wizardId: String): Wizard {
+        return wizardService.getWizard(wizardId.toLong())
     }
+
+//    fun getMe(principal: Principal?): ResponseEntity<Any> {
+//        // 1. Проверка на то, что пользователь залогинен
+//        if (principal == null) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "Unauthorized"))
+//        }
+//
+//        return try {
+//            // 2. В токене у нас лежит ID (например, "2"), поэтому превращаем строку в Long
+//            val wizardId = principal.name.toLong()
+//
+//            // 3. Ищем мага по ID, а не по логину
+//            val wizard = wizardService.getWizard(wizardId)
+//
+//            ResponseEntity.ok(wizard)
+//        } catch (e: NumberFormatException) {
+//            // Это на случай, если вдруг в токене окажется не число
+//            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Invalid token data"))
+//        } catch (e: Exception) {
+//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
+//        }
+//    }
 
     @GetMapping("/{id}")
     fun getWizard(@PathVariable id: Long): Wizard {
@@ -45,10 +49,12 @@ class WizardController(private val wizardService: WizardService) {
 
     @PutMapping("/join/{guildId}")
     fun joinGuild(
-        @AuthenticationPrincipal principal: Principal,
+            @AuthenticationPrincipal wizardId: String,
+//        @AuthenticationPrincipal principal: Principal,
         @PathVariable guildId: Long
     ): Wizard {
-        val updatedWizard = wizardService.joinGuild(principal.name.toLong(), guildId)
+        val updatedWizard = wizardService.joinGuild(wizardId.toLong(), guildId)
+        //val updatedWizard = wizardService.joinGuild(principal.name.toLong(), guildId)
         return wizardService.getWizard(updatedWizard.id)
     }
 }

@@ -42,6 +42,7 @@ class JwtService {
         return try {
             getClaims(token)?.expiration?.after(Date()) ?: false
         } catch (ex: Exception) {
+            println(ex.message)
             false
         }
     }

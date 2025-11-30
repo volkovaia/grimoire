@@ -14,8 +14,8 @@ import java.security.Principal
 class GuildController(private val guildService: GuildService) {
 
     @GetMapping("/available")
-    fun getAvailableGuilds(@AuthenticationPrincipal principal: Principal): List<Guild> {
-        return guildService.getAvailableGuilds(principal.name.toLong())
+    fun getAvailableGuilds(@AuthenticationPrincipal wizardId: String): List<Guild> {
+        return guildService.getAvailableGuilds(wizardId.toLong())
     }
 
 }
