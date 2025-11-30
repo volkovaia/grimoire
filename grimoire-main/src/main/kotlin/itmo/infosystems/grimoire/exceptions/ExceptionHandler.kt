@@ -6,6 +6,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.server.ResponseStatusException
 
 @ControllerAdvice
 class ExceptionHandler {
@@ -39,6 +40,17 @@ class ExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleUnknown(ex: Exception): ResponseEntity<Map<String, String>> {
         return ResponseEntity.status(500).body(mapOf("error" to "Internal server error"))
+    }
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(ex: ResponseStatusException): ResponseEntity<Map<String, String>> {
+        // Получаем сообщение. ?: гарантирует, что это не null, чтобы избежать Type Mismatch
+        val errorMessage: String = ex.reason ?: "Error processing request"
+
+        // Возвращаем статус и тело ошибки, которое задано в ResponseStatusException (например, 401 и сообщение)
+        return ResponseEntity
+                .status(ex.statusCode)
+                .body(mapOf("error" to errorMessage)) // Используем Kotlin mapOf(key to value)
     }
 
 }

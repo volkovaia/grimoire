@@ -3,6 +3,10 @@ function getAuthToken() {
     return localStorage.getItem('token');
 }
 
+function saveAuthToken(token) {
+    localStorage.setItem('token', token); // <-- Используем тот же ключ, что и в getAuthToken()
+}
+
 function checkAuth() {
     if (!getAuthToken()) {
         window.location.href = '/login.html';
@@ -45,7 +49,13 @@ const api = {
     login: (login, password) => apiRequest('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ login, password })
-    }),
+    }).then(response => {
+              // Предполагается, что ответ: { token: "..." }
+              if (response.token) {
+                  saveAuthToken(response.token); // <--- ДОБАВЛЕНО: СОХРАНЕНИЕ ТОКЕНА
+              }
+              return response;
+          }),
     getWizard: () => apiRequest('/wizards/me'),
     getMySpells: (page = 0, size = 20) => apiRequest(`/my-spellbook?page=${page}&size=${size}`),
     getAllSpells: (page = 0, size = 100) => apiRequest(`/all-spellbook?page=${page}&size=${size}`),

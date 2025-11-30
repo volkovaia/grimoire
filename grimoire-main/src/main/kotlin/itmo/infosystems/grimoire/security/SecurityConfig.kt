@@ -37,7 +37,7 @@ class SecurityConfig(
                         "/artifacts.html",
                         "/css/**",
                         "/js/**",
-                        "/images/**",
+                        "/images/**", "/favicon.ico",
                         "/error"
                     ).permitAll()
                     .anyRequest().authenticated()
