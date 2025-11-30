@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Ваши артефакты</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+    <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
+    <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+    <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
+    <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
+    <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
+    <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+</nav>
+
+<div class="magic-header">
+    <h2><i class="fas fa-crown"></i> Ваши артефакты</h2>
+    <div class="magic-moon"><i class="fas fa-moon"></i></div>
+</div>
+
+<div id="artifactsContainer">
+    <p>Загрузка артефактов...</p>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    async function loadArtifacts() {
+        try {
+            checkAuth();
+            const artifacts = await api.getInventory(0, 100);
+            const container = document.getElementById('artifactsContainer');
+
+            if (artifacts.content.length === 0) {
+                container.innerHTML = `
+                    <div class="no-records">
+                        <i class="fas fa-box-open"></i>
+                        <p>У вас пока нет артефактов. Совершите заклинания, чтобы получить их!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const list = artifacts.content.map(a => `
+                <li style="background: rgba(30, 25, 50, 0.7); margin: 10px 0; padding: 12px; border-radius: 6px; border-left: 3px solid #d4af37;">
+                    <i class="fas fa-gem" style="color: #d4af37;"></i>
+                    <strong>${a.artifactName}</strong>
+                    <span style="color: #8d7a65; margin-left: 10px;">(редкость:
+                        <span style="${getRarityColor(a.rarity)}">${a.rarity}</span>)
+                    </span>
+                </li>
+            `).join('');
+
+            container.innerHTML = `<ul style="list-style: none; padding: 0; margin: 20px 0;">${list}</ul>`;
+        } catch (err) {
+            container.innerHTML = `<p class="message error">Ошибка: ${err.message}</p>`;
+        }
+    }
+
+    function getRarityColor(rarity) {
+        if (rarity >= 90) return 'color:#ff5252;';
+        if (rarity >= 75) return 'color:#ffd700;';
+        return 'color:#4caf50;';
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('wizardId');
+        localStorage.removeItem('wizardLogin');
+        window.location.href = '/login.html';
+    }
+
+    loadArtifacts();
+</script>
+</body>
+</html>

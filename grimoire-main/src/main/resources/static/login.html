@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Вход в систему</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="scroll-deco"><i class="fas fa-user-lock"></i></div>
+
+<div class="magic-header">
+    <h2><i class="fas fa-user-lock"></i> Вход в систему</h2>
+    <div class="magic-moon"><i class="fas fa-moon"></i></div>
+</div>
+
+<div id="errorMessage" class="message error" style="display:none; max-width:500px; margin:0 auto 20px;">
+    <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Ошибка</span>
+</div>
+
+<!-- Форма входа -->
+<form id="loginForm" class="login-form">
+    <div>
+        <label><i class="fas fa-user"></i> Логин мага</label>
+        <input type="text" id="login" name="login" placeholder="Например: merlin" required />
+    </div>
+    <div>
+        <label><i class="fas fa-key"></i> Пароль от гримуара</label>
+        <input type="password" id="password" name="password" placeholder="Секретное слово" required />
+    </div>
+    <button type="submit">
+        <i class="fas fa-sign-in-alt"></i> Войти
+    </button>
+    <p style="text-align: center; margin-top: 15px;">
+        Нет аккаунта? <a href="#" id="showRegister" style="color: #FFC107; text-decoration: none; font-weight: bold;">
+        <i class="fas fa-feather-alt"></i> Зарегистрироваться
+    </a>
+    </p>
+</form>
+
+<!-- Форма регистрации -->
+<div id="registrationContainer" style="display:none;">
+    <h3 style="text-align: center; margin-top: 30px;"><i class="fas fa-scroll"></i> Регистрация нового мага</h3>
+    <form id="registerForm" class="login-form">
+        <div>
+            <label><i class="fas fa-font"></i> Логин мага (уникальный)</label>
+            <input type="text" id="regLogin" placeholder="Например: merlin" required />
+        </div>
+        <div>
+            <label><i class="fas fa-key"></i> Пароль (не менее 6 символов)</label>
+            <input type="password" id="regPassword" placeholder="Секретное слово" required />
+        </div>
+        <div>
+            <label><i class="fas fa-user"></i> Имя мага</label>
+            <input type="text" id="regName" placeholder="Например: Мерлин" required />
+        </div>
+        <div>
+            <label><i class="fas fa-user"></i> Фамилия мага</label>
+            <input type="text" id="regSurname" placeholder="Например: Сорокин" required />
+        </div>
+        <div>
+            <label><i class="fas fa-building"></i> ID гильдии </label>
+            <input type="number" id="regGuildId" placeholder="Число" value="1" required />
+        </div>
+        <button type="submit">
+
+            <i class="fas fa-feather-alt"></i> Зарегистрироваться
+        </button>
+        <p style="text-align: center; margin-top: 30px;">
+            <a href="#" id="showLogin" style="color: #FFC107; text-decoration: none; font-weight: bold;">
+                <i class="fas fa-sign-in-alt"></i> Назад ко входу
+            </a>
+        </p>
+    </form>
+</div>
+
+<!-- Dropdown для выбора гильдии -->
+<select id="guildSelect" style="display:none; margin:10px auto; width:300px;" onchange="document.getElementById('regGuildId').value = this.value;">
+    <option value="">— Выберите гильдию —</option>
+</select>
+
+<!-- JS -->
+<script>
+    // ✅ Базовый URL не нужен, если login.html отдаётся через Spring Boot (http://localhost:8080/login.html)
+    // Если открываете как file:// или через :63342 — раскомментируйте и укажите порт:
+    // const API_BASE_URL = 'http://localhost:8080';
+
+    // Универсальный fetch с поддержкой API_BASE_URL (если задан)
+    function apiFetch(url, options = {}) {
+        const fullUrl = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '') + url;
+        return fetch(fullUrl, options);
+    }
+
+
+
+    // 🌟 Регистрация (адаптирована под бэк без wizard в ответе)
+    document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const login = document.getElementById('regLogin')?.value.trim();
+        const password = document.getElementById('regPassword')?.value;
+        const name = document.getElementById('regName')?.value.trim();
+        const surname = document.getElementById('regSurname')?.value.trim();
+        const guildId = Number(document.getElementById('regGuildId')?.value) ||
+                        Number(document.getElementById('guildSelect')?.value);
+
+        if (!login || !password || !name || !surname || !guildId) {
+            alert('❌ Пожалуйста, заполните все поля');
+            return;
+        }
+
+        try {
+            const res = await apiFetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password, name, surname, guildId })
+            });
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Сервер вернул не-JSON: ' + text.substring(0, 100));
+            }
+
+            if (!res.ok) {
+                const msg = data.message || data.error || JSON.stringify(data);
+                throw new Error(msg);
+            }
+
+            // ✅ Только token — wizard не приходит
+            if (!data || typeof data.token !== 'string') {
+                throw new Error('Сервер не вернул токен');
+            }
+
+            // Сохраняем данные (логин — из формы)
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('wizardId', '0'); // ID неизвестен — можно 0
+            localStorage.setItem('wizardLogin', login);
+            localStorage.setItem('guildId', guildId);
+
+            alert('✅ Регистрация успешна! Переход в кабинет...');
+            window.location.href = '/dashboard.html';
+
+        } catch (err) {
+            console.error('Ошибка регистрации:', err);
+            alert('❌ Ошибка регистрации: ' + (err.message || err));
+        }
+    });
+
+    // 🌟 Вход (адаптирован под бэк без wizard в ответе)
+    document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const login = document.getElementById('login')?.value.trim();
+        const password = document.getElementById('password')?.value;
+
+        if (!login || !password) {
+            showError('Введите логин и пароль');
+            return;
+        }
+
+        try {
+            const res = await apiFetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
+            });
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Сервер вернул не-JSON: ' + text.substring(0, 100));
+            }
+
+            if (!res.ok) {
+                const msg = data.message || data.error || 'Неверный логин или пароль';
+                throw new Error(msg);
+            }
+
+            // ✅ Проверяем только token
+            if (!data || typeof data.token !== 'string') {
+                throw new Error('Сервер не вернул токен');
+            }
+
+            // Сохраняем (логин — из формы)
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('wizardId', '0');
+            localStorage.setItem('wizardLogin', login);
+
+            window.location.href = '/dashboard.html';
+
+        } catch (err) {
+            console.error('Ошибка входа:', err);
+            showError(err.message || 'Произошла ошибка при входе');
+        }
+    });
+
+    // Переключение форм
+    const loginFormEl = document.getElementById('loginForm');
+    const registerContainerEl = document.getElementById('registrationContainer');
+    const showRegisterLink = document.getElementById('showRegister');
+    const showLoginLink = document.getElementById('showLogin');
+    const guildSelectEl = document.getElementById('guildSelect');
+
+    showRegisterLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginFormEl.style.display = 'none';
+        registerContainerEl.style.display = 'block';
+        guildSelectEl.style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    showLoginLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        registerContainerEl.style.display = 'none';
+        loginFormEl.style.display = 'block';
+        guildSelectEl.style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Вспомогательная функция отображения ошибки
+    function showError(message) {
+        const el = document.getElementById('errorMessage');
+        if (el) {
+            document.getElementById('errorText').textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 6000);
+        } else {
+            alert('⚠️ ' + message);
+        }
+    }
+</script>
+</body>
+</html>

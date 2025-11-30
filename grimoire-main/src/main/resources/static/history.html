@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>История заклинаний</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+  <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
+  <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+  <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
+  <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
+  <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
+  <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+</nav>
+
+<div class="magic-header">
+  <h2><i class="fas fa-scroll"></i> История заклинаний</h2>
+  <div class="magic-moon"><i class="fas fa-moon"></i></div>
+</div>
+
+<div id="historyContainer">
+  <p>Загрузка истории...</p>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // Вспомогательная функция для отображения статуса заклинания (перенесена из закомментированного блока)
+  function getStatusHtml(status) {
+      // Используем имена ENUM из Kotlin: ACTIVE, REMOVED, EXPIRED
+      if (status === 'ACTIVE') return `<span class="status-active"><i class="fas fa-circle" style="font-size:0.8em;"></i> Активно</span>`;
+      if (status === 'REMOVED') return `<span class="status-removed"><i class="fas fa-ban" style="font-size:0.8em;"></i> Снято</span>`;
+      if (status === 'EXPIRED') return `<span class="status-expired"><i class="fas fa-history" style="font-size:0.8em;"></i> Истекло</span>`;
+      return `<span style="color: #8d7a65;"><i class="fas fa-question-circle"></i> ${status}</span>`;
+  }
+
+  function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('wizardId');
+      localStorage.removeItem('wizardLogin');
+      window.location.href = '/login.html';
+  }
+
+
+  // Вспомогательная функция для отображения статуса заклинания.
+  function getStatusHtml(status) {
+      if (status === 'ACTIVE') return `<span class="status-active"><i class="fas fa-circle" style="font-size:0.8em;"></i> Активно</span>`;
+      if (status === 'REMOVED') return `<span class="status-removed"><i class="fas fa-ban" style="font-size:0.8em;"></i> Снято</span>`;
+      if (status === 'EXPIRED') return `<span class="status-expired"><i class="fas fa-history" style="font-size:0.8em;"></i> Истекло</span>`;
+      return `<span style="color: #8d7a65;"><i class="fas fa-question-circle"></i> ${status}</span>`;
+  }
+
+  function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('wizardId');
+      localStorage.removeItem('wizardLogin');
+      window.location.href = '/login.html';
+  }
+
+  async function loadHistory() {
+      const container = document.getElementById('historyContainer');
+      container.innerHTML = '<p>Загрузка истории...</p>';
+
+      try {
+          // 1. Проверка аутентификации
+          checkAuth();
+
+          // 2. ВЫПОЛНЯЕМ ДВА ЗАПРОСА ПАРАЛЛЕЛЬНО
+          const [myCasts, othersCasts] = await Promise.all([
+              api.getActiveSpells(),
+              api.getOthersActiveSpells()
+          ]);
+
+          // 3. ОБЪЕДИНЯЕМ РЕЗУЛЬТАТЫ
+          const allCasts = [
+              ...(Array.isArray(myCasts) ? myCasts : []),
+              ...(Array.isArray(othersCasts) ? othersCasts : [])
+          ];
+
+          // 4. СОРТИРОВКА (от новых к старым)
+          allCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
+
+
+          if (allCasts.length === 0) {
+              container.innerHTML = `
+                  <div class="no-records">
+                      <i class="fas fa-book-open"></i>
+                      <p>В древних свитках нет записей о заклинаниях, которые вы можете видеть.</p>
+                  </div>
+              `;
+              return;
+          }
+
+          // 5. ФОРМИРОВАНИЕ ТАБЛИЦЫ
+          const rows = allCasts.map(c => {
+              const time = new Date(c.castTime).toLocaleString('ru-RU', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+              });
+
+              // Используем вложенные поля сущностей: c.spell.name, c.wizard.login, c.victim.name
+              const spellName = c.spell?.name || '—';
+              const casterInfo = c.wizard?.login || `Маг #${c.wizard?.id || '?'}`;
+              const victimInfo = c.victim?.name || `Цель #${c.victim?.id || '?'}`;
+
+              return `
+                  <tr>
+                      <td>${spellName}</td>
+                      <td>${casterInfo}</td>
+                      <td>${victimInfo}</td>
+                      <td>${time}</td>
+                      <td>${getStatusHtml(c.status)}</td>
+                  </tr>
+              `;
+          }).join('');
+
+          // Вставляем сгенерированный HTML в контейнер.
+          container.innerHTML = `
+              <table>
+                  <thead>
+                      <tr>
+                          <th><i class="fas fa-spell-check"></i> Заклинание</th>
+                          <th><i class="fas fa-hat-wizard"></i> Заклинатель</th>
+                          <th><i class="fas fa-user"></i> Жертва</th>
+                          <th><i class="fas fa-clock"></i> Время</th>
+                          <th><i class="fas fa-info-circle"></i> Статус</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${rows}
+                  </tbody>
+              </table>
+          `;
+      } catch (err) {
+          let errorMessage = err.message || 'Неизвестная ошибка';
+
+          if (errorMessage.includes("401 UNAUTHORIZED") || errorMessage.includes("User must be authenticated")) {
+              errorMessage = "Ошибка авторизации. Проверьте ваш токен и войдите снова.";
+          } else if (errorMessage.includes("500") || errorMessage.includes("Internal server error")) {
+               errorMessage = "Внутренняя ошибка сервера (HTTP 500). Проверьте логи Kotlin на предмет исключений ленивой загрузки (LazyInitializationException) или NPE в сервисе.";
+          }
+
+          container.innerHTML = `<p class="message error">Ошибка: ${errorMessage}</p>`;
+          console.error("Ошибка при загрузке истории:", err);
+      }
+  }
+
+  // Вызываем функцию загрузки истории при загрузке DOM.
+  loadHistory();
+</script>
+</body>
+</html>

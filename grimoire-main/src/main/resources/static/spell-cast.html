@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Наложение заклинания | Гримуар</title>
+    <!-- Используем существующий стиль, который, судя по логам, загружается -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+    <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
+    <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+    <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
+    <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
+    <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
+    <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+</nav>
+
+<h1>Наложить заклинание</h1>
+
+<form id="castSpellForm">
+
+    <!-- Поле ID Волшебника (Заклинателя) - соответствует скриншоту -->
+<!--    <div class="form-group">-->
+<!--        <label for="casterId">ID Волшебника (Заклинателя):</label>-->
+<!--        <input type="text" id="casterId" class="form-control" value="1" readonly required>-->
+<!--    </div>-->
+
+    <!-- Поле Выберите Цель (ID Волшебника) - соответствует скриншоту -->
+    <div class="form-group">
+        <label for="targetId">Выберите Цель (ID Волшебника):</label>
+        <input type="number" id="targetId" class="form-control" placeholder="Введите ID волшебника-цели" value="2" required>
+    </div>
+
+    <!-- ***** НОВАЯ ДОБАВЛЕННАЯ ПЛАШКА ДЛЯ ВЫБОРА ЗАКЛИНАНИЯ ***** -->
+    <div class="form-group">
+        <label for="spellSelect">Выберите заклинание:</label>
+        <select id="spellSelect" name="spell_id" class="form-control" required>
+            <!-- Изначальное состояние: -->
+            <option value="">Загрузка заклинаний...</option>
+        </select>
+    </div>
+    <!-- ************************************************************ -->
+
+    <!-- Кнопка "Наложить заклинание" - соответствует скриншоту -->
+    <button id="castButton" type="submit" class="btn btn-primary">Наложить заклинание</button>
+
+    <!-- Область для сообщений об успехе/ошибке -->
+    <p id="messageArea" style="margin-top: 15px;"></p>
+
+</form>
+
+<!-- Подключение вашего существующего JS-файла -->
+<script src="/js/api.js"></script>
+
+<!-- Небольшой inline-скрипт, чтобы инициировать процесс после загрузки api.js -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth(); // Проверяем авторизацию при загрузке страницы
+
+        // Вызываем НОВУЮ функцию для загрузки заклинаний из api.js
+        //loadArtifactsAndPopulateSelect('spellSelect'); // Больше не передаем URL
+
+         loadSpellsForCasting('spellSelect');
+
+        // Назначаем обработчик на форму
+        document.getElementById('castSpellForm').addEventListener('submit', handleCastSpellSubmit);
+    });
+</script>
+</body>
+</html>

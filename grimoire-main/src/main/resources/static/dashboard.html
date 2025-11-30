@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Кабинет мага</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+    <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
+    <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+    <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
+    <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
+    <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
+    <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+</nav>
+
+<div class="magic-header">
+    <h1><i class="fas fa-book"></i> Кабинет мага: <span id="wizardName">Загрузка...</span></h1>
+    <div class="magic-moon"><i class="fas fa-moon"></i></div>
+</div>
+
+<div style="text-align: center; margin-bottom: 30px;">
+    <p><i class="fas fa-building"></i> Гильдия ID: <span id="guild"></span></p>
+</div>
+
+<div class="info-box">
+    <h2><i class="fas fa-spell-check"></i> Доступные заклинания</h2>
+    <ul id="spellsList">
+        <li>Загрузка...</li>
+    </ul>
+</div>
+
+<div class="info-box">
+    <h2><i class="fas fa-crown"></i> Ваши артефакты</h2>
+    <ul id="artifactsList">
+        <li>Загрузка...</li>
+    </ul>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+        // Функция для отображения логина из localStorage
+    function displayFallbackName() {
+        const wizardLogin = localStorage.getItem('wizardLogin');
+        const nameElement = document.getElementById('wizardName');
+        if (nameElement && wizardLogin) {
+            nameElement.textContent = wizardLogin; // ← показываем логин
+        }
+    }
+
+         // Функция для отображения Id гильдии из localStorage
+    function displayGuildId() {
+        const guildId = localStorage.getItem('guildId');
+        const nameElement = document.getElementById('guild');
+        if (nameElement && guildId) {
+            nameElement.textContent = guildId; // ← показываем логин
+        }
+    }
+
+        async function loadDashboard() {
+            try {
+                checkAuth();
+                displayFallbackName();
+
+                // 1. Загружаем данные мага
+                const wizard = await api.getWizard();
+                console.log('Данные мага:', wizard); // Полезно для отладки
+
+                document.getElementById('wizardName').textContent = wizard.login;
+
+                // ИСПРАВЛЕНИЕ 1: Гильдия - это объект, а не просто ID
+                if (wizard.guild) {
+                    // Выведем Название и ID. Например: "Орден Феникса (ID: 1)"
+                    document.getElementById('guild').textContent = `${wizard.guild.name} (ID: ${wizard.guild.id})`;
+                } else {
+                    document.getElementById('guild').textContent = 'Нет гильдии';
+                }
+
+                // 2. Загружаем заклинания
+                const spells = await api.getMySpells(0, 20);
+
+                // В логах видно, что приходит "content", так как это Pageable
+                const spellList = spells.content || spells;
+
+                renderList('spellsList', spellList, spell => {
+                    // ИСПРАВЛЕНИЕ 2: Приводим тип к нижнему регистру для проверки (ATTACK -> attack)
+                    // И проверяем поле spell.type вместо spell.spellType
+                    const type = (spell.type || '').toLowerCase();
+
+                    const icon = type === 'attack' ? 'fa-fire' :
+                        type === 'defense' ? 'fa-shield-alt' :
+                            type === 'utility' ? 'fa-feather' : 'fa-magic';
+
+                    const color = type === 'attack' ? '#ff5252' :
+                        type === 'defense' ? '#4caf50' :
+                            type === 'utility' ? '#2196f3' : '#9c27b0';
+
+                    // ИСПРАВЛЕНИЕ 3: Используем spell.name и spell.description
+                    return `<li>
+                    <i class="fas ${icon}" style="margin-right:8px;color:${color};" title="${spell.description || ''}"></i>
+                    <strong>${spell.name}</strong>
+                    <span style="color:#8d7a65; font-size: 0.9em;"> (${spell.type})</span>
+                </li>`;
+                });
+
+                // 3. Загружаем артефакты
+                const artifacts = await api.getArtifacts(0, 20);
+                const artifactList = artifacts.content || artifacts;
+
+                renderList('artifactsList', artifactList, a =>
+                    // ИСПРАВЛЕНИЕ 4: Используем a.name вместо a.artifactName
+                    `<li><i class="fas fa-gem" style="margin-right:8px;color:#ffd700;"></i> ${a.name}</li>`
+                );
+
+            } catch (err) {
+                console.error(err);
+                displayFallbackName();
+                document.getElementById('spellsList').innerHTML = '<li><i class="fas fa-exclamation-circle"></i> Ошибка загрузки</li>';
+                document.getElementById('artifactsList').innerHTML = '<li><i class="fas fa-exclamation-circle"></i> Ошибка загрузки</li>';
+                document.getElementById('guild').textContent = '—';
+            }
+        }
+
+    function renderList(id, items, mapper) {
+        const ul = document.getElementById(id);
+        if (items.length === 0) {
+            ul.innerHTML = '<li><i class="fas fa-book"></i> Нет данных</li>';
+        } else {
+            ul.innerHTML = items.map(mapper).join('');
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('wizardId');
+        localStorage.removeItem('wizardLogin');
+        localStorage.removeItem('guildId');
+        window.location.href = '/login.html';
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>

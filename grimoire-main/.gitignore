@@ -6,9 +6,9 @@ build/
 !**/src/test/**/build/
 .DS_Store
 *.http
-application.properties
 *.sql
-*.html
+build/**/*.html
+.gradle/**/*.html
 
 ### STS ###
 .apt_generated
