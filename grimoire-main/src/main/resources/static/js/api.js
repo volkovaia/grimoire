@@ -51,6 +51,7 @@ const api = {
     getAllSpells: (page = 0, size = 100) => apiRequest(`/all-spellbook?page=${page}&size=${size}`),
     getArtifacts: (page = 0, size = 20) => apiRequest(`/artifacts?page=${page}&size=${size}`),
     getActiveSpells: () => apiRequest('/temlates/spells/active/mine'),
+    getOthersActiveSpells: () => apiRequest('/temlates/spells/active/others'),
     getAllVictims: () => apiRequest('/victims'),
     castSpell: (spellId, victimId) => apiRequest('/temlates/spells/cast', {
         method: 'POST',
@@ -120,14 +121,127 @@ async function loadArtifactsAndPopulateSelect(selectId) { // Переимено�
 }
 
 
+//async function loadSpellsForCasting(selectId) {
+//    const selectElement = document.getElementById(selectId);
+//    selectElement.innerHTML = '<option value="">Загрузка заклинаний...</option>'; // Очищаем и показываем статус
+//    const token = localStorage.getItem('jwtToken');
+//
+//    if (!token) {
+//        selectElement.innerHTML = '<option value="">Необходимо авторизоваться</option>';
+//        return;
+//    }
+//
+//    // Используем существующий эндпоинт, который уже фильтрует по уровню гильдии
+//    const url = '/my-spellbook?page=0&size=100'; // Устанавливаем большой размер для получения всех
+//
+//    try {
+//        const response = await fetchApi(url, 'GET', null, token);
+//        const data = await response.json(); // Ожидаем Page<Spell>
+//
+//        selectElement.innerHTML = '<option value="">-- Выберите заклинание --</option>'; // Очищаем для заполнения
+//
+//        if (data.content && data.content.length > 0) {
+//            data.content.forEach(spell => {
+//                const option = document.createElement('option');
+//                option.value = spell.id;
+//                // Формат: [ID] Название (Требуемый уровень: X)
+//                option.textContent = `[${spell.id}] ${spell.name} (Требуемый уровень: ${spell.requiredGuildLevel})`;
+//                selectElement.appendChild(option);
+//            });
+//        } else {
+//            selectElement.innerHTML = '<option value="">Нет доступных заклинаний</option>';
+//        }
+//
+//    } catch (error) {
+//        console.error('Ошибка загрузки доступных заклинаний:', error);
+//        selectElement.innerHTML = '<option value="">Ошибка загрузки</option>';
+//    }
+//}
+
+async function loadSpellsForCasting(selectId) {
+    const selectElement = document.getElementById(selectId);
+    selectElement.innerHTML = '<option value="">Загрузка заклинаний...</option>'; // Очищаем и показываем статус
+
+    // 1. Проверяем аутентификацию
+    if (!getAuthToken()) { // Используем вашу общую функцию проверки токена
+        selectElement.innerHTML = '<option value="">Необходимо авторизоваться</option>';
+        return;
+    }
+
+    // Используем ваш API-метод getMySpells, который уже использует apiRequest (с токеном)
+    try {
+        // Заменяем fetchApi(url, 'GET', null, token)
+        const data = await api.getMySpells(0, 100); // Используем API-метод
+
+        selectElement.innerHTML = '<option value="">-- Выберите заклинание --</option>';
+
+        if (data.content && data.content.length > 0) {
+            data.content.forEach(spell => {
+                const option = document.createElement('option');
+                option.value = spell.id;
+                // Формат: [ID] Название (Требуемый уровень: X)
+                option.textContent = `[${spell.id}] ${spell.name} (Требуемый уровень: ${spell.requiredGuildLevel})`;
+                selectElement.appendChild(option);
+            });
+        } else {
+            selectElement.innerHTML = '<option value="">Нет доступных заклинаний</option>';
+        }
+
+    } catch (error) {
+        console.error('Ошибка загрузки доступных заклинаний:', error);
+        // Обработка случая, если apiRequest вернул ошибку, например 401/403
+        selectElement.innerHTML = `<option value="">Ошибка загрузки: ${error.message || 'Произошла ошибка'}</option>`;
+    }
+}
+
 /**
  * Обрабатывает отправку формы для наложения заклинания.
  */
+//async function handleCastSpellSubmit(event) {
+//    event.preventDefault();
+//    checkAuth(); // Проверяем авторизацию перед отправкой
+//
+//    const casterId = document.getElementById('casterId').value;
+//    const targetId = document.getElementById('targetId').value;
+//    const spellSelect = document.getElementById('spellSelect');
+//    const spellId = spellSelect.value;
+//    const messageArea = document.getElementById('messageArea');
+//
+//    messageArea.textContent = 'Наложение заклинания...';
+//    messageArea.style.color = 'orange';
+//
+//    if (!spellId || !targetId) { // casterId обычно берется из сессии, не из поля
+//        messageArea.textContent = "Пожалуйста, выберите заклинание и укажите ID Цели.";
+//        messageArea.style.color = 'red';
+//        return;
+//    }
+//
+//    try {
+//        // 2.2. Отправка POST-запроса на бэкенд через ваш API-метод
+//        // Обратите внимание: ваш метод castSpell принимает spellId и victimId, а не targetId.
+//        const result = await api.castSpell(parseInt(spellId), parseInt(targetId));
+//
+//        messageArea.textContent = `Заклинание "${spellSelect.options[spellSelect.selectedIndex].text}" успешно наложено на цель ${targetId}!`;
+//        messageArea.style.color = 'green';
+//        // Дополнительная логика (обновление состояния и т.д.)
+//
+//    } catch (error) {
+//        console.error("Ошибка наложения заклинания:", error);
+//        messageArea.textContent = `Ошибка наложения заклинания: ${error.message || 'Произошла ошибка'}`;
+//        messageArea.style.color = 'red';
+//    }
+//}
+
+// В файле js/api.js
+
+// ... (определение api объекта с методом castSpell)
+
 async function handleCastSpellSubmit(event) {
     event.preventDefault();
-    checkAuth(); // Проверяем авторизацию перед отправкой
+    // checkAuth(); // Не нужно здесь
 
-    const casterId = document.getElementById('casterId').value;
+    const form = event.target;
+    // Используйте форму для получения значений
     const targetId = document.getElementById('targetId').value;
     const spellSelect = document.getElementById('spellSelect');
     const spellId = spellSelect.value;
@@ -136,22 +250,29 @@ async function handleCastSpellSubmit(event) {
     messageArea.textContent = 'Наложение заклинания...';
     messageArea.style.color = 'orange';
 
-    if (!spellId || !targetId) { // casterId обычно берется из сессии, не из поля
+    if (!spellId || !targetId) {
         messageArea.textContent = "Пожалуйста, выберите заклинание и укажите ID Цели.";
         messageArea.style.color = 'red';
         return;
     }
 
     try {
-        // 2.2. Отправка POST-запроса на бэкенд через ваш API-метод
-        // Обратите внимание: ваш метод castSpell принимает spellId и victimId, а не targetId.
+        // 1. Отправка POST-запроса на бэкенд через ваш API-метод
+        // Ваш метод api.castSpell(spellId, victimId)
         const result = await api.castSpell(parseInt(spellId), parseInt(targetId));
 
-        messageArea.textContent = `Заклинание "${spellSelect.options[spellSelect.selectedIndex].text}" успешно наложено на цель ${targetId}!`;
+        // 2. Обработка успешного ответа (если статус 200/201)
+        // Если castSpell вернул SpellCastResponse:
+        const selectedSpellName = spellSelect.options[spellSelect.selectedIndex].textContent;
+
+        messageArea.textContent = `Заклинание "${result.spellName || selectedSpellName}" (ID: ${result.castId}) успешно наложено на цель ${result.victimId || targetId}! Статус: ${result.status}`;
         messageArea.style.color = 'green';
-        // Дополнительная логика (обновление состояния и т.д.)
+
+        // Опционально: Очистить поле цели после успеха
+        // document.getElementById('targetId').value = '';
 
     } catch (error) {
+        // 3. Обработка ошибки (включая 403 от проверки уровня гильдии)
         console.error("Ошибка наложения заклинания:", error);
         messageArea.textContent = `Ошибка наложения заклинания: ${error.message || 'Произошла ошибка'}`;
         messageArea.style.color = 'red';
