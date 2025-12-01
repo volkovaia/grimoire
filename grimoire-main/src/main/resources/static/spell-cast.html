@@ -67,6 +67,25 @@
         // Назначаем обработчик на форму
         document.getElementById('castSpellForm').addEventListener('submit', handleCastSpellSubmit);
     });
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('wizardId');
+        localStorage.removeItem('wizardLogin');
+        window.location.href = '/login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth(); // Проверяем авторизацию при загрузке страницы
+
+        // Вызываем НОВУЮ функцию для загрузки заклинаний из api.js
+        //loadArtifactsAndPopulateSelect('spellSelect'); // Больше не передаем URL
+
+         loadSpellsForCasting('spellSelect');
+
+        // Назначаем обработчик на форму
+        document.getElementById('castSpellForm').addEventListener('submit', handleCastSpellSubmit);
+    });
 </script>
 </body>
 </html>
