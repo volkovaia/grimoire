@@ -140,6 +140,20 @@ async function loadArtifactsAndPopulateSelect(selectId) { // Переимено�
 }
 
 
+function getVictimTypeDisplay(victimType) {
+    const type = (victimType || '').toUpperCase();
+    switch(type) {
+        case 'WIZARD':
+            return 'Волшебник';
+        case 'HUMAN':
+            return 'Человек';
+        case 'BOTH':
+            return 'Действует на всех';
+        default:
+            return 'Неизвестно';
+    }
+}
+
 async function loadSpellsForCasting(selectId) {
     const selectElement = document.getElementById(selectId);
     selectElement.innerHTML = '<option value="">Загрузка заклинаний...</option>';
@@ -158,7 +172,14 @@ async function loadSpellsForCasting(selectId) {
             data.content.forEach(spell => {
                 const option = document.createElement('option');
                 option.value = spell.id;
-                option.textContent = `[${spell.id}] ${spell.name} (Требуемый уровень: ${spell.requiredGuildLevel})`;
+
+                // 💡 ИСПРАВЛЕНИЕ: Формируем новый текст: Описание и Тип Жертвы
+                const victimType = getVictimTypeDisplay(spell.victimType || spell.victim_type); // Пробуем оба имени
+                const description = spell.description || 'Нет описания';
+
+                // [ID] Имя (Описание. Жертва: [Тип])
+                option.textContent = `[${spell.id}] ${spell.name} (${description}. Жертва: ${victimType})`;
+
                 selectElement.appendChild(option);
             });
         } else {
