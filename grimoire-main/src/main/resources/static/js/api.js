@@ -86,9 +86,9 @@ const api = {
     }),
 
     getGuildsByLevel: (level) => apiRequest(`/guilds?level=${level}`),
-    castSpell: (spellId, victimId) => apiRequest('/temlates/spells/cast', {
+    castSpell: (spellId, victimId, expireTime) => apiRequest('/temlates/spells/cast', {
         method: 'POST',
-        body: JSON.stringify({ spellId, victimId })
+        body: JSON.stringify({ spellId, victimId, expireTime })
     })
 };
 
