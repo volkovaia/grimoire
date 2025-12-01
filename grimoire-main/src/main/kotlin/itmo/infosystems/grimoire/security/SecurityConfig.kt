@@ -36,6 +36,7 @@ class SecurityConfig(
                         "/spell-cast.html",
                         "/artifacts.html",
                         "/css/**",
+                            "/guilds",
                         "/js/**",
                             "favicon.ico",
                         "/images/**", "/favicon.ico",

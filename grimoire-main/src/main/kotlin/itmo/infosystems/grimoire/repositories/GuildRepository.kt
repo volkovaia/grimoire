@@ -11,4 +11,5 @@ interface GuildRepository : JpaRepository<Guild, Long> {
         nativeQuery = true
     )
     fun findAvailableGuilds(@Param("wizardId") wizardId: Long): List<Guild>
+    fun findByLevel(level: Int): List<Guild>
 }
