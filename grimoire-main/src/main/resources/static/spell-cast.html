@@ -29,10 +29,18 @@
 <!--    </div>-->
 
     <!-- Поле Выберите Цель (ID Волшебника) - соответствует скриншоту -->
+<!--    <div class="form-group">-->
+<!--        <label for="targetId">Выберите Цель (ID Волшебника):</label>-->
+<!--        <input type="number" id="targetId" class="form-control" placeholder="Введите ID волшебника-цели" value="2" required>-->
+<!--    </div>-->
     <div class="form-group">
-        <label for="targetId">Выберите Цель (ID Волшебника):</label>
-        <input type="number" id="targetId" class="form-control" placeholder="Введите ID волшебника-цели" value="2" required>
+        <label for="targetSelect">Выберите Цель (Жертву):</label>
+        <select id="targetSelect" class="form-control" required>
+            <option value="">Загрузка жертв...</option>
+        </select>
     </div>
+    <!-- Скрытое поле для передачи ID цели (уберем value="2") -->
+    <input type="hidden" id="targetId" value="" required>
 
     <!-- ***** НОВАЯ ДОБАВЛЕННАЯ ПЛАШКА ДЛЯ ВЫБОРА ЗАКЛИНАНИЯ ***** -->
     <div class="form-group">
@@ -52,6 +60,39 @@
 
 </form>
 
+<!-- Основная форма каста заканчивается здесь: </form> -->
+
+<!-- 💡 НОВАЯ ФОРМА: Создание Жертвы -->
+<div id="newVictimContainer" class="login-form" style="display:none; max-width: 500px; margin: 40px auto 20px;">
+    <h3 style="text-align: center;"><i class="fas fa-user-plus"></i> Создать новую жертву</h3>
+    <form id="createVictimForm">
+        <div>
+            <label><i class="fas fa-font"></i> Имя</label>
+            <input type="text" id="victimName" placeholder="Например: Иван" required />
+        </div>
+        <div>
+            <label><i class="fas fa-user"></i> Фамилия</label>
+            <input type="text" id="victimSurname" placeholder="Например: Иванов" required />
+        </div>
+
+        <button type="submit">
+            <i class="fas fa-plus"></i> Создать и выбрать
+        </button>
+        <p style="text-align: center; margin-top: 15px;">
+            <a href="#" id="showCastForm" style="color: #FFC107; text-decoration: none; font-weight: bold;">
+                <i class="fas fa-arrow-left"></i> Назад к наложению
+            </a>
+        </p>
+    </form>
+</div>
+
+<!-- Ссылки для переключения форм (Добавьте это перед <script src="/js/api.js">) -->
+<p style="text-align: center; margin-top: 15px;">
+    <a href="#" id="showNewVictimForm" style="color: #FFC107; text-decoration: none; font-weight: bold;">
+        <i class="fas fa-user-plus"></i> Создать новую жертву
+    </a>
+</p>
+
 <!-- Подключение вашего существующего JS-файла -->
 <script src="/js/api.js"></script>
 
@@ -69,11 +110,125 @@
         document.getElementById('castSpellForm').addEventListener('submit', handleCastSpellSubmit);
     });
 
+    // ... (после loadVictimsAndPopulateSelect и перед document.addEventListener('DOMContentLoaded', ...) )
+
+
+    // --- НОВАЯ ЛОГИКА: Создание Жертвы ---
+
+    const castFormEl = document.getElementById('castSpellForm');
+    const newVictimContainerEl = document.getElementById('newVictimContainer');
+    const createVictimFormEl = document.getElementById('createVictimForm');
+
+    document.getElementById('showNewVictimForm')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        castFormEl.style.display = 'none';
+        newVictimContainerEl.style.display = 'block';
+        document.getElementById('showNewVictimForm').style.display = 'none';
+    });
+
+    document.getElementById('showCastForm')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        newVictimContainerEl.style.display = 'none';
+        castFormEl.style.display = 'block';
+        document.getElementById('showNewVictimForm').style.display = 'block';
+    });
+
+
+    // 💡 ОБРАБОТЧИК ФОРМЫ СОЗДАНИЯ ЖЕРТВЫ
+    createVictimFormEl?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('victimName').value.trim();
+        const surname = document.getElementById('victimSurname').value.trim();
+
+        if (!name || !surname) {
+            showError('Введите имя и фамилию для новой жертвы');
+            return;
+        }
+
+        try {
+            // Вызов нового метода API
+            const newVictim = await api.createVictim(name, surname, true);
+
+            // 1. Обновляем выпадающий список жертв
+            await loadVictimsAndPopulateSelect();
+
+            // 2. Выбираем только что созданную жертву
+            const selectEl = document.getElementById('targetSelect');
+            selectEl.value = newVictim.id; // Предполагая, что API вернул newVictim.id
+
+            // 3. Обновляем скрытое поле targetId
+            document.getElementById('targetId').value = newVictim.id;
+
+            // 4. Переключаемся обратно на форму наложения
+            newVictimContainerEl.style.display = 'none';
+            castFormEl.style.display = 'block';
+            document.getElementById('showNewVictimForm').style.display = 'block';
+
+            showError(`✅ Жертва ${newVictim.name} (ID: ${newVictim.id}) успешно создана и выбрана!`);
+
+        } catch (err) {
+            console.error('Ошибка создания жертвы:', err);
+            showError(`❌ Ошибка создания жертвы: ${err.message || 'Произошла ошибка'}`);
+        }
+    });
+
+
     function logout() {
         localStorage.removeItem('token');
         localStorage.removeItem('wizardId');
         localStorage.removeItem('wizardLogin');
         window.location.href = '/login.html';
+    }
+// ...
+    // Вспомогательная функция для отображения сообщений (если отсутствует в api.js/другом месте)
+    function showError(message) {
+        const el = document.getElementById('messageArea');
+        if (el) {
+            el.textContent = message;
+            el.style.color = 'red';
+        } else {
+            alert('⚠️ ' + message);
+        }
+    }
+
+    /**
+     * Загружает доступных жертв и заполняет список.
+     */
+    async function loadVictimsAndPopulateSelect() {
+        const selectElement = document.getElementById('targetSelect');
+        const targetIdInput = document.getElementById('targetId');
+
+        selectElement.innerHTML = '<option value="">Загрузка жертв...</option>';
+        targetIdInput.value = '';
+
+        try {
+            // Используем метод, который теперь возвращает только доступных жертв
+            const victims = await api.getAvailableVictims();
+
+            if (!Array.isArray(victims) || victims.length === 0) {
+                selectElement.innerHTML = '<option value="">— Нет доступных жертв —</option>';
+                return;
+            }
+
+            let options = '<option value="">— Выберите жертву —</option>';
+            victims.forEach(victim => {
+                // Предполагаем, что объекты Human имеют поля id, name, surname
+                const fullName = `${victim.name} ${victim.surname || ''}`.trim();
+                options += `<option value="${victim.id}">${fullName} (ID: ${victim.id})</option>`;
+            });
+
+            selectElement.innerHTML = options;
+
+            // Связываем выбор в select с нашим скрытым полем
+            selectElement.addEventListener('change', (e) => {
+                targetIdInput.value = e.target.value;
+            });
+
+        } catch (error) {
+            console.error('Ошибка загрузки жертв:', error);
+            selectElement.innerHTML = `<option value="">Ошибка загрузки: ${error.message || 'Произошла ошибка'}</option>`;
+            showError(`Ошибка загрузки жертв: ${error.message || 'Произошла ошибка'}`);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -83,6 +238,7 @@
         //loadArtifactsAndPopulateSelect('spellSelect'); // Больше не передаем URL
 
          loadSpellsForCasting('spellSelect');
+         loadVictimsAndPopulateSelect();
 
         // Назначаем обработчик на форму
         document.getElementById('castSpellForm').addEventListener('submit', handleCastSpellSubmit);

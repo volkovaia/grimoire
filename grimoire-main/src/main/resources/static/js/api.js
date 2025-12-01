@@ -78,8 +78,13 @@ const api = {
     getArtifacts: (page = 0, size = 20) => apiRequest(`/artifacts?page=${page}&size=${size}`),
     getActiveSpells: () => apiRequest('/temlates/spells/active/mine'),
     getOthersActiveSpells: () => apiRequest('/temlates/spells/active/others'),
-    getAllVictims: () => apiRequest('/victims'),
-    // НОВЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ГИЛЬДИЙ
+    getAvailableVictims: () => apiRequest('/victims'),
+
+    createVictim: (name, surname, isAlive = true) => apiRequest('/victims', {
+        method: 'POST',
+        body: JSON.stringify({ name, surname, isAlive })
+    }),
+
     getGuildsByLevel: (level) => apiRequest(`/guilds?level=${level}`),
     castSpell: (spellId, victimId) => apiRequest('/temlates/spells/cast', {
         method: 'POST',
@@ -87,8 +92,6 @@ const api = {
     })
 };
 
-// --- ФУНКЦИИ, КОТОРЫЕ МОГУТ БЫТЬ В api.js, ЕСЛИ ОНИ ОБЩИЕ ---
-// Оставлю здесь, чтобы не терять ваш код, но они могут быть перенесены в dashboard.html
 
 /**
  * Асинхронно получает список Артефактов (Заклинаний) через аутентифицированный API
