@@ -35,11 +35,26 @@ async function apiRequest(url, options = {}) {
     if (!res.ok) {
         let errorText = `HTTP ${res.status}`;
         try {
-            const error = await res.json();
-            errorText = error.message || errorText;
-        } catch (e) {
-            // ignore
-        }
+                    const error = await res.json();
+
+                    // 💡 ИСПРАВЛЕНИЕ: Пытаемся получить наиболее подробное сообщение об ошибке
+                    // Spring/Jackson часто использует поля 'error', 'message' или 'detail'
+                    let serverMessage = error.error || error.message || (error.detail ? (error.detail.message || error.detail) : null);
+
+                    // Если сообщение от PostgreSQL (как в логах) завернуто, извлекаем его
+                    if (typeof serverMessage === 'string' && serverMessage.includes('ОШИБКА:')) {
+                        // Извлекаем только текст ошибки, отбрасывая служебную информацию JPA/SQL
+                        const match = serverMessage.match(/ОШИБКА: (.*)/);
+                        errorText = match ? match[1].split('Где:')[0].trim() : serverMessage;
+                    } else {
+                        errorText = serverMessage || `Ошибка: HTTP ${res.status}`;
+                    }
+
+                } catch (e) {
+                    // Если ответ не JSON (например, пустой 400 или 500)
+                    const text = await res.text();
+                    errorText = `Ошибка: HTTP ${res.status}. ${text.substring(0, 100)}`;
+                }
         throw new Error(errorText);
     }
     return res.json();
