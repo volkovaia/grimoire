@@ -9,12 +9,12 @@
 </head>
 <body>
 <nav>
-    <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
-    <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+    <a href="/dashboard.html"><i class="fas fa-house"></i> Кабинет</a>
+    <a href="/spells.html"><i class="fas fa-hat-wizard"></i> Заклинания</a>
     <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
     <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
-    <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
-    <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+    <a href="/spell-cast.html"><i class="fas fa-wand-magic-sparkles"></i> Наложение заклинаний</a>
+    <a href="#" onclick="logout(); return false;"><i class="fas fa-right-from-bracket"></i> Выйти</a>
 </nav>
 
 <div class="magic-header">
@@ -55,9 +55,9 @@
                     : `<span style="color:#888;"><i class="fas fa-lock"></i> Недоступно</span>`;
 
                 const typeHtml = {
-                    'attack': `<span style="color:#ff5252;"><i class="fas fa-fire"></i> Атака</span>`,
-                    'defense': `<span style="color:#4caf50;"><i class="fas fa-shield-alt"></i> Защита</span>`,
-                    'control': `<span style="color:#2196f3;"><i class="fas fa-brain"></i> Контроль</span>`
+                    'attack': `<span style="color:#ff5252;"><i class="fas fa-skull-crossbones"></i> Атака</span>`,
+                    'defense': `<span style="color:#4caf50;"><i class="fas fa-shield-halved"></i> Защита</span>`,
+                    'control': `<span style="color:#2196f3;"><i class="fas fas fa-hand-sparkles"></i> Контроль</span>`
                 }[spell.type] || `<span>${spell.type}</span>`;
 
                 return `

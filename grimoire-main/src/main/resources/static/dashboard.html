@@ -9,16 +9,16 @@
 </head>
 <body>
 <nav>
-    <a href="/dashboard.html"><i class="fas fa-book"></i> Кабинет</a>
-    <a href="/spells.html"><i class="fas fa-magic"></i> Заклинания</a>
+    <a href="/dashboard.html"><i class="fas fa-house"></i> Кабинет</a>
+    <a href="/spells.html"><i class="fas fa-hat-wizard"></i> Заклинания</a>
     <a href="/artifacts.html"><i class="fas fa-crown"></i> Артефакты</a>
     <a href="/history.html"><i class="fas fa-scroll"></i> История</a>
-    <a href="/spell-cast.html"><i class="fas fa-fight"></i> Наложение заклинаний</a>
-    <a href="#" onclick="logout(); return false;"><i class="fas fa-door-open"></i> Выйти</a>
+    <a href="/spell-cast.html"><i class="fas fa-wand-magic-sparkles"></i> Наложение заклинаний</a>
+    <a href="#" onclick="logout(); return false;"><i class="fas fa-right-from-bracket"></i> Выйти</a>
 </nav>
 
 <div class="magic-header">
-    <h1><i class="fas fa-book"></i> Кабинет мага: <span id="wizardName">Загрузка...</span></h1>
+    <h1><i class="fas fa-house"></i> Кабинет мага: <span id="wizardName">Загрузка...</span></h1>
     <div class="magic-moon"><i class="fas fa-moon"></i></div>
 </div>
 
@@ -27,7 +27,7 @@
 </div>
 
 <div class="info-box">
-    <h2><i class="fas fa-spell-check"></i> Доступные заклинания</h2>
+    <h2><i class="fas fa-fire-wand"></i> Доступные заклинания</h2>
     <ul id="spellsList">
         <li>Загрузка...</li>
     </ul>
@@ -90,9 +90,9 @@
                     // И проверяем поле spell.type вместо spell.spellType
                     const type = (spell.type || '').toLowerCase();
 
-                    const icon = type === 'attack' ? 'fa-fire' :
-                        type === 'defense' ? 'fa-shield-alt' :
-                            type === 'utility' ? 'fa-feather' : 'fa-magic';
+                    const icon = type === 'attack' ? 'fa-fire-alt' :
+                        type === 'defense' ? 'fa-shield-halved' :
+                            type === 'utility' ? 'fa-star' : 'fa-magic';
 
                     const color = type === 'attack' ? '#ff5252' :
                         type === 'defense' ? '#4caf50' :

@@ -22,6 +22,11 @@ th, td, p, div, span, button, input, label, li {
   font-family: 'Cinzel', Georgia, 'Times New Roman', serif !important;
 }
 
+.fas {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", FontAwesome, sans-serif !important;
+    font-weight: 900; /* Обычно solid иконки имеют этот вес */
+}
+
 .magic-header {
   position: relative;
   text-align: center;
