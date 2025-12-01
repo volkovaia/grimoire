@@ -69,6 +69,8 @@
                 const wizard = await api.getWizard();
                 console.log('Данные мага:', wizard); // Полезно для отладки
 
+                localStorage.setItem('wizardId', String(wizard.id));
+
                 document.getElementById('wizardName').textContent = wizard.login;
 
                 // ИСПРАВЛЕНИЕ 1: Гильдия - это объект, а не просто ID

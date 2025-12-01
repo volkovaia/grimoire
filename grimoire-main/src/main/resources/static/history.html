@@ -22,15 +22,27 @@
   <div class="magic-moon"><i class="fas fa-moon"></i></div>
 </div>
 
-<div id="historyContainer">
-  <p>Загрузка истории...</p>
+<!-- 💡 НОВЫЙ КОНТЕЙНЕР 1: Ваша история (Заклинания, наложенные вами) -->
+<div class="info-box">
+  <h3><i class="fas fa-hat-wizard"></i> Заклинания, наложенные вами (Активные)</h3>
+  <div id="myCastsContainer">
+    <p>Загрузка вашей истории...</p>
+  </div>
 </div>
+
+<!-- 💡 НОВЫЙ КОНТЕЙНЕР 2: История, которую вы можете видеть (Включая вашу) -->
+<div class="info-box" style="margin-top: 40px;">
+  <h3><i class="fas fa-eye"></i> Вся видимая активная история</h3>
+  <div id="allVisibleCastsContainer">
+    <p>Загрузка всей видимой истории...</p>
+  </div>
+</div>
+
 
 <script src="/js/api.js"></script>
 <script>
   // Вспомогательная функция для отображения статуса заклинания (перенесена из закомментированного блока)
   function getStatusHtml(status) {
-      // Используем имена ENUM из Kotlin: ACTIVE, REMOVED, EXPIRED
       if (status === 'ACTIVE') return `<span class="status-active"><i class="fas fa-circle" style="font-size:0.8em;"></i> Активно</span>`;
       if (status === 'REMOVED') return `<span class="status-removed"><i class="fas fa-ban" style="font-size:0.8em;"></i> Снято</span>`;
       if (status === 'EXPIRED') return `<span class="status-expired"><i class="fas fa-history" style="font-size:0.8em;"></i> Истекло</span>`;
@@ -44,114 +56,110 @@
       window.location.href = '/login.html';
   }
 
+  /**
+   * Создает HTML-таблицу из массива данных о заклинаниях
+   * @param {Array} casts Массив объектов SpellCast.
+   * @returns {string} HTML-разметка таблицы.
+   */
+  function createHistoryTable(casts) {
+      if (casts.length === 0) {
+           return `<div class="no-records"><i class="fas fa-book-open"></i><p>Нет записей.</p></div>`;
+      }
 
-  // Вспомогательная функция для отображения статуса заклинания.
-  function getStatusHtml(status) {
-      if (status === 'ACTIVE') return `<span class="status-active"><i class="fas fa-circle" style="font-size:0.8em;"></i> Активно</span>`;
-      if (status === 'REMOVED') return `<span class="status-removed"><i class="fas fa-ban" style="font-size:0.8em;"></i> Снято</span>`;
-      if (status === 'EXPIRED') return `<span class="status-expired"><i class="fas fa-history" style="font-size:0.8em;"></i> Истекло</span>`;
-      return `<span style="color: #8d7a65;"><i class="fas fa-question-circle"></i> ${status}</span>`;
-  }
+      const rows = casts.map(c => {
+          const time = new Date(c.castTime).toLocaleString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+          });
 
-  function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('wizardId');
-      localStorage.removeItem('wizardLogin');
-      window.location.href = '/login.html';
+          const spellName = c.spell?.name || '—';
+          const casterInfo = c.wizard?.login || `Маг #${c.wizard?.id || '?'}`;
+          const victimInfo = c.victim?.name || `Цель #${c.victim?.id || '?'}`;
+
+          return `
+              <tr>
+                  <td>${spellName}</td>
+                  <td>${casterInfo}</td>
+                  <td>${victimInfo}</td>
+                  <td>${time}</td>
+                  <td>${getStatusHtml(c.status)}</td>
+              </tr>
+          `;
+      }).join('');
+
+      return `
+          <table>
+              <thead>
+                  <tr>
+                      <th><i class="fas fa-spell-check"></i> Заклинание</th>
+                      <th><i class="fas fa-hat-wizard"></i> Заклинатель</th>
+                      <th><i class="fas fa-user"></i> Жертва</th>
+                      <th><i class="fas fa-clock"></i> Время</th>
+                      <th><i class="fas fa-info-circle"></i> Статус</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${rows}
+              </tbody>
+          </table>
+      `;
   }
 
   async function loadHistory() {
-      const container = document.getElementById('historyContainer');
-      container.innerHTML = '<p>Загрузка истории...</p>';
+      const myCastsContainer = document.getElementById('myCastsContainer');
+      const allVisibleCastsContainer = document.getElementById('allVisibleCastsContainer');
 
       try {
-          // 1. Проверка аутентификации
           checkAuth();
+          const wizardId = localStorage.getItem('wizardId'); // ID текущего мага (если храните)
 
-          // 2. ВЫПОЛНЯЕМ ДВА ЗАПРОСА ПАРАЛЛЕЛЬНО
+          // 1. ЗАГРУЗКА: Вся видимая история (Ваша + Чужая)
           const [myCasts, othersCasts] = await Promise.all([
-              api.getActiveSpells(),
-              api.getOthersActiveSpells()
+              api.getActiveSpells(),      // Заклинания, где вы — заклинатель
+              api.getOthersActiveSpells() // Заклинания, которые вы можете видеть
           ]);
 
-          // 3. ОБЪЕДИНЯЕМ РЕЗУЛЬТАТЫ
-          const allCasts = [
+          // 2. ФОРМИРОВАНИЕ: Вся видимая история
+          let allCasts = [
               ...(Array.isArray(myCasts) ? myCasts : []),
               ...(Array.isArray(othersCasts) ? othersCasts : [])
           ];
 
-          // 4. СОРТИРОВКА (от новых к старым)
-          allCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
+          // Удаляем дубликаты (т.к. myCasts включены в othersCasts или могут пересекаться)
+          const uniqueCasts = allCasts.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+          uniqueCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
+
+          // 3. ФОРМИРОВАНИЕ: Только Ваша история (Заклинания, наложенные вами)
+          // Фильтруем все активные касты, чтобы оставить только те, где wizardId совпадает
+          // (Предполагается, что getActiveSpells возвращает только ваши касты, но фильтруем для надежности)
+          const myOnlyCasts = (Array.isArray(myCasts) ? myCasts : [])
+              .filter(c => String(c.wizard?.id) === wizardId);
+          myOnlyCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
 
 
-          if (allCasts.length === 0) {
-              container.innerHTML = `
-                  <div class="no-records">
-                      <i class="fas fa-book-open"></i>
-                      <p>В древних свитках нет записей о заклинаниях, которые вы можете видеть.</p>
-                  </div>
-              `;
-              return;
-          }
+          // 4. ОТОБРАЖЕНИЕ
+          myCastsContainer.innerHTML = createHistoryTable(myOnlyCasts);
+          allVisibleCastsContainer.innerHTML = createHistoryTable(uniqueCasts);
 
-          // 5. ФОРМИРОВАНИЕ ТАБЛИЦЫ
-          const rows = allCasts.map(c => {
-              const time = new Date(c.castTime).toLocaleString('ru-RU', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-              });
-
-              // Используем вложенные поля сущностей: c.spell.name, c.wizard.login, c.victim.name
-              const spellName = c.spell?.name || '—';
-              const casterInfo = c.wizard?.login || `Маг #${c.wizard?.id || '?'}`;
-              const victimInfo = c.victim?.name || `Цель #${c.victim?.id || '?'}`;
-
-              return `
-                  <tr>
-                      <td>${spellName}</td>
-                      <td>${casterInfo}</td>
-                      <td>${victimInfo}</td>
-                      <td>${time}</td>
-                      <td>${getStatusHtml(c.status)}</td>
-                  </tr>
-              `;
-          }).join('');
-
-          // Вставляем сгенерированный HTML в контейнер.
-          container.innerHTML = `
-              <table>
-                  <thead>
-                      <tr>
-                          <th><i class="fas fa-spell-check"></i> Заклинание</th>
-                          <th><i class="fas fa-hat-wizard"></i> Заклинатель</th>
-                          <th><i class="fas fa-user"></i> Жертва</th>
-                          <th><i class="fas fa-clock"></i> Время</th>
-                          <th><i class="fas fa-info-circle"></i> Статус</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      ${rows}
-                  </tbody>
-              </table>
-          `;
       } catch (err) {
           let errorMessage = err.message || 'Неизвестная ошибка';
 
-          if (errorMessage.includes("401 UNAUTHORIZED") || errorMessage.includes("User must be authenticated")) {
-              errorMessage = "Ошибка авторизации. Проверьте ваш токен и войдите снова.";
+          if (errorMessage.includes("401 UNAUTHORIZED")) {
+              errorMessage = "Ошибка авторизации. Войдите снова.";
           } else if (errorMessage.includes("500") || errorMessage.includes("Internal server error")) {
-               errorMessage = "Внутренняя ошибка сервера (HTTP 500). Проверьте логи Kotlin на предмет исключений ленивой загрузки (LazyInitializationException) или NPE в сервисе.";
+              errorMessage = "Внутренняя ошибка сервера (HTTP 500). Проверьте логи Kotlin.";
           }
 
-          container.innerHTML = `<p class="message error">Ошибка: ${errorMessage}</p>`;
+          const errorHtml = `<p class="message error"><i class="fas fa-exclamation-triangle"></i> Ошибка: ${errorMessage}</p>`;
+          myCastsContainer.innerHTML = errorHtml;
+          allVisibleCastsContainer.innerHTML = errorHtml;
           console.error("Ошибка при загрузке истории:", err);
       }
   }
 
-  // Вызываем функцию загрузки истории при загрузке DOM.
   loadHistory();
 </script>
 </body>
