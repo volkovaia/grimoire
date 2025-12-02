@@ -264,3 +264,70 @@ nav a i {
 .back-link i {
   margin-right: 6px;
 }
+
+/* ========================================================================= */
+/*                              УВЕДОМЛЕНИЯ (TOAST)                          */
+/* ========================================================================= */
+
+/* 1. Контейнер, фиксирующий положение на странице (правый верхний угол) */
+#notification-container {
+    position: fixed; /* Фиксированное положение относительно окна */
+    top: 20px;       /* Отступ сверху */
+    right: 20px;     /* Отступ справа */
+    z-index: 1000;   /* Обеспечивает отображение поверх всех элементов */
+    display: flex;
+    flex-direction: column; /* Уведомления будут складываться одно под другим */
+    gap: 10px;       /* Расстояние между уведомлениями */
+    pointer-events: none; /* Позволяет кликать сквозь контейнер, если нет тостов */
+}
+
+/* 2. Базовый стиль для каждого уведомления (Скрытое состояние) */
+.toast {
+    /* Визуальное оформление */
+    min-width: 280px;
+    padding: 15px 20px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    cursor: default;
+    pointer-events: auto; /* Разрешаем взаимодействие с самим тостом */
+
+    /* Начальное скрытое/сдвинутое состояние */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(110%); /* Сдвигаем за пределы экрана справа */
+
+    /* Анимация перехода */
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out, visibility 0.4s;
+}
+
+/* 3. Стиль для активного (видимого) состояния */
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0); /* Возвращаем на экран */
+}
+
+
+/* 4. Стиль для конкретных типов уведомлений из NotificationType */
+
+/* ARTIFACT_AWARDED - Успех/Важное достижение (Зеленый/Желтый) */
+.toast.ARTIFACT_AWARDED {
+    background-color: #38c177; /* Глубокий зеленый */
+    border-left: 5px solid #ffeb3b; /* Желтый бордюр */
+}
+
+/* GUILD_UPGRADE_AVAILABLE - Доступно улучшение гильдии (Синий/Голубой) */
+.toast.GUILD_UPGRADE_AVAILABLE {
+    background-color: #4dc0b5; /* Бирюзовый */
+    border-left: 5px solid #4aa0b5; /* Более темный бордюр */
+}
+
+/* Добавим на всякий случай для общих ошибок (если вы их отправляете) */
+.toast.ERROR {
+    background-color: #e3342f; /* Красный */
+    border-left: 5px solid #fff;
+}
