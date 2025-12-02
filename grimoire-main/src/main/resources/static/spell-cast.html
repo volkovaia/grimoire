@@ -260,7 +260,8 @@
         // 💡 НОВЫЕ СТРОКИ: Рассчитываем expireTime, если длительность выбрана (durationSeconds > 0)
         if (durationSeconds > 0) {
             const now = new Date();
-            const future = new Date(now.getTime() + durationSeconds * 1000); // Добавляем секунды
+            let future = new Date(now.getTime() + durationSeconds * 1000); // Добавляем секунды
+            future.setTime(future.getTime() + (3 * 60 * 60 * 1000));
             // Форматируем в ISO 8601 (строка, ожидаемая бэкендом, например: 2025-12-01T15:00:00)
             expireTime = future.toISOString().slice(0, 19);
         }
