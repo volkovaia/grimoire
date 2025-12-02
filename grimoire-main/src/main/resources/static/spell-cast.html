@@ -9,6 +9,12 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+
+<!-- Библиотеки для WebSocket -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="/js/notifications.js"></script>
+
 <nav>
     <a href="/dashboard.html"><i class="fas fa-house"></i> Кабинет</a>
     <a href="/spells.html"><i class="fas fa-hat-wizard"></i> Заклинания</a>
@@ -19,6 +25,9 @@
 </nav>
 
 <h1>Наложить заклинание</h1>
+
+<div id="notification-container"></div>
+
 
 <form id="castSpellForm">
 

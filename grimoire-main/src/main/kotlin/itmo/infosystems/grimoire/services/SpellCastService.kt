@@ -15,29 +15,29 @@ import java.time.LocalDateTime
 
 @Service
 class SpellCastService(
-    private val spellCastRepository: SpellCastRepository,
-    private val wizardRepository: WizardRepository,
-    private val humanRepository: HumanRepository,
-    private val spellRepository: SpellRepository
+        private val spellCastRepository: SpellCastRepository,
+        private val wizardRepository: WizardRepository,
+        private val humanRepository: HumanRepository,
+        private val spellRepository: SpellRepository
 ) {
 
     @Transactional
     fun castSpell(wizardId: Long, request: SpellCastRequest): SpellCast {
         val wizard = wizardRepository.findById(wizardId)
-            .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
+                .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
         val victim = humanRepository.findById(requireNotNull(request.victimId))
-            .orElseThrow { SpellCastException("Victim not found with id: ${request.victimId}") }
+                .orElseThrow { SpellCastException("Victim not found with id: ${request.victimId}") }
         val spell = spellRepository.findById(requireNotNull(request.spellId))
-            .orElseThrow { SpellCastException("Spell not found with id: ${request.spellId}") }
+                .orElseThrow { SpellCastException("Spell not found with id: ${request.spellId}") }
 
         return try {
             spellCastRepository.save(
-                SpellCast(
-                    wizard = wizard,
-                    victim = victim,
-                    spell = spell,
-                    expireTime = request.expireTime
-                )
+                    SpellCast(
+                            wizard = wizard,
+                            victim = victim,
+                            spell = spell,
+                            expireTime = request.expireTime
+                    )
             )
         } catch (ex: DataAccessException) {
             val message = ex.message ?: "Неизвестная ошибка"
@@ -49,9 +49,9 @@ class SpellCastService(
     @Transactional
     fun removeSpell(wizardId: Long, spellCastId: Long): SpellCast {
         val wizard = wizardRepository.findById(wizardId)
-            .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
+                .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
         val spellCast = spellCastRepository.findById(spellCastId)
-            .orElseThrow { SpellCastException("SpellCast not found with id: $spellCastId") }
+                .orElseThrow { SpellCastException("SpellCast not found with id: $spellCastId") }
 
         return try {
             spellCast.removedByWizard = wizard
@@ -64,14 +64,15 @@ class SpellCastService(
         }
     }
 
-    fun getActiveSpells(wizardId: Long) = spellCastRepository.findByWizardIdAndStatus(wizardId, SpellCastStatus.ACTIVE)
+    fun getActiveSpells(wizardId: Long) = spellCastRepository.findAllByCasterIdAndStatus(wizardId, SpellCastStatus.ACTIVE)
+    //fun getActiveSpells(wizardId: Long) = spellCastRepository.findByWizardIdAndStatus(wizardId, SpellCastStatus.ACTIVE)
 
     fun getActiveSpellsFromWizardsWithLowerOrEqualGuildLevel(wizardId: Long): List<SpellCast> {
         val wizard = wizardRepository.findById(wizardId)
-            .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
+                .orElseThrow { SpellCastException("Wizard not found with id: $wizardId") }
         return spellCastRepository.findActiveSpellsFromWizardsWithLowerOrEqualGuildLevel(
-            wizard.guild?.level ?: 0,
-            wizardId
+                wizard.guild?.level ?: 0,
+                wizardId
         )
     }
 }

@@ -40,6 +40,7 @@
 
 
 <script src="/js/api.js"></script>
+
 <script>
   // Вспомогательная функция для отображения статуса заклинания
   function getStatusHtml(status) {
@@ -49,24 +50,44 @@
       return `<span style="color: #8d7a65;"><i class="fas fa-question-circle"></i> ${status}</span>`;
   }
 
-  // 💡 НОВАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ТАБЛИЦЫ С НОВЫМИ СТОЛБЦАМИ
+  // 💡 ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ТАБЛИЦЫ
+  // 💡 ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ТАБЛИЦЫ (С РУЧНЫМ СМЕЩЕНИЕМ ВРЕМЕНИ ОКОНЧАНИЯ)
   function createHistoryTable(casts) {
       if (casts.length === 0) {
            return `<div class="no-records"><i class="fas fa-book-open"></i><p>Нет записей.</p></div>`;
       }
 
       const rows = casts.map(c => {
-          // 💡 ИЗМЕНЕНИЕ 1: Форматирование ВРЕМЕНИ НАЛОЖЕНИЯ
-          const castTime = new Date(c.castTime).toLocaleString('ru-RU', {
+
+          // 1. Время наложения
+          const castDate = new Date(c.castTime);
+          const castTime = castDate.toLocaleString('ru-RU', {
               day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
           });
 
-          // 💡 ИЗМЕНЕНИЕ 2: Форматирование ВРЕМЕНИ ОКОНЧАНИЯ
-          const expireTime = c.expireTime
-              ? new Date(c.expireTime).toLocaleString('ru-RU', {
-                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              })
-              : 'Бессрочно'; // ⬅️ Теперь отображаем "Бессрочно"
+          // 2. 💡 РУЧНОЕ ИСПРАВЛЕНИЕ: Время окончания
+          let expireTimeDisplay = 'Бессрочно';
+
+          if (c.expireTime) {
+              // Создаем объект Date, заменяя 'T' на ' ' (чтобы прочитать как локальное время)
+              const originalDate = new Date(c.expireTime.replace('T', ' '));
+
+              // ❌ ЭТОТ МЕТОД НУЖЕН, ТОЛЬКО ЕСЛИ ПРЕДЫДУЩИЙ НЕ РАБОТАЛ (закомментировано)
+              // // Создаем копию объекта Date
+              // let correctedDate = new Date(originalDate);
+              // // Добавляем 3 часа (3 * 60 * 60 * 1000 миллисекунд)
+              // correctedDate.setTime(correctedDate.getTime() + (3 * 60 * 60 * 1000));
+
+              // Если бэкенд возвращает 05:49, а нужно 07:49 (разница 2 часа):
+              // Добавляем 2 часа
+              originalDate.setTime(originalDate.getTime() + (3 * 60 * 60 * 1000));
+
+              // Форматируем скорректированную дату
+              expireTimeDisplay = originalDate.toLocaleString('ru-RU', {
+                   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+              });
+          }
+          const expireTime = expireTimeDisplay;
 
           const spellName = c.spell?.name || '—';
           const casterInfo = c.wizard?.login || `Маг #${c.wizard?.id || '?'}`;
@@ -78,13 +99,12 @@
                   <td>${casterInfo}</td>
                   <td>${victimInfo}</td>
                   <td>${castTime}</td>        <!-- Время наложения -->
-                  <td>${expireTime}</td>      <!-- Время окончания -->
+                  <td>${expireTime}</td>      <!-- Время окончания (с ручным смещением) -->
                   <td>${getStatusHtml(c.status)}</td>
               </tr>
           `;
       }).join('');
 
-      // 💡 ИЗМЕНЕНИЕ 3: Обновляем ЗАГОЛОВКИ ТАБЛИЦЫ
       return `
           <table>
               <thead>
@@ -92,8 +112,8 @@
                       <th><i class="fas fa-spell-check"></i> Заклинание</th>
                       <th><i class="fas fa-hat-wizard"></i> Заклинатель</th>
                       <th><i class="fas fa-user"></i> Жертва</th>
-                      <th><i class="fas fa-clock"></i> Время наложения</th> <!-- 💡 ПЕРЕИМЕНОВАНО -->
-                      <th><i class="fas fa-hourglass-end"></i> Время окончания</th> <!-- 💡 НОВЫЙ СТОЛБЕЦ -->
+                      <th><i class="fas fa-clock"></i> Время наложения</th>
+                      <th><i class="fas fa-hourglass-end"></i> Время окончания</th>
                       <th><i class="fas fa-info-circle"></i> Статус</th>
                   </tr>
               </thead>
@@ -104,34 +124,59 @@
       `;
   }
 
-  async function loadHistory() {
+ async function loadHistory() {
       const myCastsContainer = document.getElementById('myCastsContainer');
       const allVisibleCastsContainer = document.getElementById('allVisibleCastsContainer');
 
+      // 💡 НАДЕЖНОЕ ИЗВЛЕЧЕНИЕ ID ВОЛШЕБНИКА ИЗ ТОКЕНА
+      let wizardId = null;
       try {
-          checkAuth();
-          const wizardId = localStorage.getItem('wizardId');
+          const token = getAuthToken();
+          if (token) {
+              const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+              wizardId = String(tokenPayload.id);
+          }
+      } catch (e) {
+          console.error("Ошибка парсинга токена:", e);
+      }
+
+      if (!wizardId) {
+          myCastsContainer.innerHTML = '<p class="message error">Ошибка: Не удалось получить ID Волшебника. Войдите снова.</p>';
+          allVisibleCastsContainer.innerHTML = '<p class="message error">Ошибка: Не удалось получить ID Волшебника. Войдите снова.</p>';
+          return;
+      }
+
+
+      try {
+          checkAuth(); // Проверка авторизации
 
           const [myCasts, othersCasts] = await Promise.all([
               api.getActiveSpells(),
               api.getOthersActiveSpells()
           ]);
 
+          // 💡 ОТЛАДОЧНЫЙ ВЫВОД: Проверьте в консоли браузера, чтобы увидеть
+          // сырые строки времени (castTime и expireTime)
+          console.log("--- СЫРЫЕ ДАННЫЕ ИСТОРИИ ЗАКЛИНАНИЙ ---");
+          console.log("Мои активные заклинания (myCasts):", myCasts);
+          console.log("Видимые заклинания (othersCasts):", othersCasts);
+          console.log("-----------------------------------------");
+
           // 1. Вся видимая история
           let allCasts = [
               ...(Array.isArray(myCasts) ? myCasts : []),
               ...(Array.isArray(othersCasts) ? othersCasts : [])
           ];
+          // Фильтрация и сортировка
           const uniqueCasts = allCasts.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
           uniqueCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
 
-          // 2. Только Ваша история
           const myOnlyCasts = (Array.isArray(myCasts) ? myCasts : [])
               .filter(c => String(c.wizard?.id) === wizardId);
           myOnlyCasts.sort((a, b) => new Date(b.castTime) - new Date(a.castTime));
 
 
-          // 3. ОТОБРАЖЕНИЕ
+          // 3. ОТОБРАЖЕНИЕ (остается без изменений)
           myCastsContainer.innerHTML = createHistoryTable(myOnlyCasts);
           allVisibleCastsContainer.innerHTML = createHistoryTable(uniqueCasts);
 
@@ -158,7 +203,7 @@
       window.location.href = '/login.html';
   }
 
-  loadHistory();
+  document.addEventListener('DOMContentLoaded', loadHistory);
 </script>
 </body>
 </html>
