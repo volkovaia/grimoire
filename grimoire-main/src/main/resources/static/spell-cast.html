@@ -138,6 +138,9 @@
     /**
      * Загружает доступных жертв и заполняет список. (Не изменено, только для контекста)
      */
+    /**
+     * Загружает доступных жертв и заполняет список. (ИСПРАВЛЕНО: Проверка наличия объекта wizard)
+     */
     async function loadVictimsAndPopulateSelect() {
         const selectElement = document.getElementById('targetSelect');
         const targetIdInput = document.getElementById('targetId');
@@ -156,10 +159,22 @@
             let options = '<option value="">— Выберите жертву —</option>';
             victims.forEach(victim => {
                 const fullName = `${victim.name} ${victim.surname || ''}`.trim();
-                const rawVictimType = victim.type || victim.victimType || victim.role || victim.kind || victim.designation;
+
+                let rawVictimType;
+
+                // 💡 ИСПРАВЛЕНИЕ: Проверяем, содержит ли объект 'victim' поле 'wizard',
+                // которое, согласно логам, возвращается для Волшебников.
+                const hasWizardObject = (victim.wizard !== null && victim.wizard !== undefined);
+
+                // Проверяем наличие вложенного объекта 'wizard' ИЛИ старых полей (на всякий случай)
+                if (hasWizardObject || (Number(victim.wizardId || victim.wizard_id) > 0)) {
+                    rawVictimType = 'WIZARD';
+                } else {
+                    rawVictimType = 'HUMAN';
+                }
+
                 const victimTypeDisplay = getVictimTypeDisplay(rawVictimType);
-                  //  const victimTypeDisplay = getVictimTypeDisplay(victim.type || victim.victimType);
-                //options += `<option value="${victim.id}">${fullName} (Тип: ${victimTypeDisplay})</option>`;
+
                 options += `<option value="${victim.id}">${fullName} (Тип: ${victimTypeDisplay}, ID: ${victim.id})</option>`;
             });
 

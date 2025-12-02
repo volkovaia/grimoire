@@ -223,5 +223,3 @@ async function handleCastSpellSubmit(event) {
         messageArea.style.color = 'red';
     }
 }
-
-// ⚠️ Предполагается, что api.js подключается перед login.html
