@@ -38,20 +38,43 @@ class WizardService(
             ?: throw EntityNotFoundException("Wizard not found with login $login")
     }
 
+//    @Transactional
+//    fun joinGuild(wizardId: Long, guildId: Long): Wizard {
+//        val wizard = wizardRepository.findById(wizardId)
+//            .orElseThrow { EntityNotFoundException("Wizard with id $wizardId not found") }
+//
+//        val guild = guildRepository.findById(guildId)
+//            .orElseThrow { EntityNotFoundException("Guild with id $guildId not found") }
+//
+//        val available = guildRepository.findAvailableGuilds(wizardId).any { it.id == guildId }
+//        if (!available) {
+//            throw IllegalStateException("Guild not available for this wizard")
+//        }
+//        wizard.guild = guild
+//
+//        return wizardRepository.save(wizard)
+//    }
+    // ... в WizardService.kt
+
     @Transactional
-    fun joinGuild(wizardId: Long, guildId: Long): Wizard {
+    fun joinGuild(wizardId: Long, newGuildId: Long): Wizard {
         val wizard = wizardRepository.findById(wizardId)
-            .orElseThrow { EntityNotFoundException("Wizard with id $wizardId not found") }
+                .orElseThrow { IllegalStateException("Wizard not found") }
+        val newGuild = guildRepository.findById(newGuildId)
+                .orElseThrow { IllegalStateException("New Guild not found") }
 
-        val guild = guildRepository.findById(guildId)
-            .orElseThrow { EntityNotFoundException("Guild with id $guildId not found") }
+        val currentLevel = wizard.guild?.level ?: 1 // Получаем текущий уровень мага (по умолчанию 1)
 
-        val available = guildRepository.findAvailableGuilds(wizardId).any { it.id == guildId }
-        if (!available) {
-            throw IllegalStateException("Guild not available for this wizard")
+        // 💡 ИСПРАВЛЕНИЕ: Прямая проверка, что новая гильдия является СЛЕДУЮЩИМ уровнем
+        if (newGuild.level != currentLevel + 1) {
+            throw IllegalStateException("Guild not available for this wizard: expected level ${currentLevel + 1}, but got ${newGuild.level}")
         }
-        wizard.guild = guild
 
+        // Если проверка пройдена, выполняем переход
+        wizard.guild = newGuild
+        // ... возможно, дополнительная логика обновления мага
         return wizardRepository.save(wizard)
     }
+
+
 }
