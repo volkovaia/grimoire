@@ -106,7 +106,23 @@
     </a>
 </p>
 
-<!-- Подключение вашего существующего JS-файла -->
+
+<!-- НОВОЕ: Область выбора гильдии при уведомлении -->
+<div id="guildUpgradeNotification" class="notification-box" style="display: none; max-width: 600px; margin: 20px auto; border: 1px solid #FFC107; padding: 20px; border-radius: 5px; background-color: #333; box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);">
+    <h3 style="color: #FFC107;"><i class="fas fa-arrow-up"></i> Доступно улучшение Гильдии!</h3>
+    <p>Ваша гильдия может быть улучшена. Выберите, в какую гильдию Вы хотите перейти:</p>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <select id="availableGuildsSelect" class="form-control" style="padding: 10px; border-radius: 4px; border: 1px solid #555; background-color: #222; color: white;">
+            <option value="">Загрузка доступных гильдий...</option>
+        </select>
+    </div>
+    <button id="upgradeGuildButton" type="button" class="btn btn-primary" style="background-color: #FFC107; color: #000; border: none; padding: 10px 15px;">Перейти в выбранную Гильдию</button>
+    <button id="closeGuildUpgrade" type="button" class="btn btn-secondary" style="margin-left: 10px; padding: 10px 15px;">Отложить</button>
+    <p id="guildUpgradeMessage" style="margin-top: 15px; font-weight: bold;"></p>
+</div>
+
+
+
 <script src="/js/api.js"></script>
 
 <!-- Небольшой inline-скрипт, чтобы инициировать процесс после загрузки api.js -->
@@ -142,6 +158,122 @@
             default: return 'Неизвестно';
         }
     }
+
+
+    // ... existing utility functions ...
+// (После определения showError, showMessage и getVictimTypeDisplay)
+
+    // --- НОВАЯ ЛОГИКА ДЛЯ УВЕДОМЛЕНИЙ О ГИЛЬДИЯХ ---
+    const guildUpgradeContainer = document.getElementById('guildUpgradeNotification');
+    const guildSelect = document.getElementById('availableGuildsSelect');
+    const upgradeButton = document.getElementById('upgradeGuildButton');
+    const closeButton = document.getElementById('closeGuildUpgrade');
+    const upgradeMessage = document.getElementById('guildUpgradeMessage');
+
+    /**
+     * Загружает доступные гильдии через API и показывает окно выбора.
+     */
+    async function showGuildUpgradeChoice() {
+        if (!guildUpgradeContainer) return;
+
+        guildSelect.innerHTML = '<option value="">Загрузка доступных гильдий...</option>';
+        upgradeMessage.textContent = '';
+        guildUpgradeContainer.style.display = 'block';
+
+        try {
+            // Используем новый API-метод getAvailableGuilds
+            const availableGuilds = await api.getAvailableGuilds();
+
+            let options = '<option value="">-- Выберите новую гильдию --</option>';
+            if (Array.isArray(availableGuilds) && availableGuilds.length > 0) {
+                availableGuilds.forEach(guild => {
+                    options += `<option value="${guild.id}">${guild.name} (Уровень ${guild.level || '?'})</option>`;
+                });
+            } else {
+                options = '<option value="">-- Нет доступных гильдий для перехода --</option>';
+                upgradeButton.disabled = true;
+            }
+            guildSelect.innerHTML = options;
+            upgradeButton.disabled = availableGuilds.length === 0;
+
+        } catch (error) {
+            console.error('Ошибка загрузки доступных гильдий:', error);
+            guildSelect.innerHTML = `<option value="">Ошибка: ${error.message || 'Произошла ошибка'}</option>`;
+            upgradeButton.disabled = true;
+        }
+    }
+
+    /**
+     * Обработчик перехода в новую гильдию (запускается по клику на кнопку).
+     */
+    async function handleGuildUpgrade() {
+        const newGuildId = guildSelect.value;
+        if (!newGuildId) {
+            upgradeMessage.textContent = 'Пожалуйста, выберите гильдию для перехода.';
+            upgradeMessage.style.color = 'red';
+            return;
+        }
+
+        upgradeButton.disabled = true;
+        upgradeMessage.textContent = 'Переход в гильдию...';
+        upgradeMessage.style.color = 'orange';
+
+        try {
+            // ВАЖНО: Предполагается, что есть эндпоинт POST /guilds/join,
+            // который нужно добавить в api.js
+            await api.upgradeGuild(Number(newGuildId));
+
+            const selectedGuildName = guildSelect.options[guildSelect.selectedIndex].textContent;
+            upgradeMessage.textContent = `✅ Успешный переход! Вы теперь в: ${selectedGuildName}`;
+            upgradeMessage.style.color = 'green';
+
+            // Скрываем форму выбора через 3 секунды
+            setTimeout(() => {
+                guildUpgradeContainer.style.display = 'none';
+                upgradeButton.disabled = false;
+            }, 3000);
+
+        } catch (error) {
+            console.error('Ошибка перехода в гильдию:', error);
+            upgradeMessage.textContent = `❌ Ошибка перехода: ${error.message || 'Произошла ошибка'}`;
+            upgradeMessage.style.color = 'red';
+            upgradeButton.disabled = false;
+        }
+    }
+
+    // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОБРАБОТКИ СООБЩЕНИЙ С BACKEND
+    // notifications.js должен вызывать ее при получении STOMP-сообщения
+    window.onNotification = function(notification) {
+        // Проверяем тип уведомления из бэкенда (NotificationType.GUILD_UPGRADE_AVAILABLE)
+        if (notification && notification.type === 'GUILD_UPGRADE_AVAILABLE') {
+            console.log("Получено уведомление об улучшении гильдии. Загрузка вариантов...");
+            showGuildUpgradeChoice();
+        }
+
+        // Для других типов уведомлений (например, ARTIFACT_AWARDED)
+        // используем стандартное отображение
+        if (notification && notification.message) {
+            showMessage(notification.message);
+        }
+    }
+
+    // Привязка обработчиков событий к новым кнопкам
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+        loadSpellsForCasting('spellSelect');
+        loadVictimsAndPopulateSelect();
+
+        document.getElementById('castSpellForm')?.addEventListener('submit', handleCastSpellSubmit);
+
+        // НОВЫЕ ОБРАБОТЧИКИ
+        upgradeButton?.addEventListener('click', handleGuildUpgrade);
+        closeButton?.addEventListener('click', () => {
+            if (guildUpgradeContainer) guildUpgradeContainer.style.display = 'none';
+        });
+
+        // Тестовый вызов для проверки (можно удалить после отладки)
+        // window.onNotification({ type: 'GUILD_UPGRADE_AVAILABLE', message: 'Тестовое уведомление' });
+    });
 
 
     /**

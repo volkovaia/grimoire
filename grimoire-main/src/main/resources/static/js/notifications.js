@@ -36,13 +36,38 @@ function connectToWebSockets() {
     });
 }
 
+//function handleNotification(notification) {
+//    console.log("Получено уведомление:", notification);
+//
+//    // notification.type -> например "ARTIFACT_AWARDED"
+//    // notification.message -> текст сообщения
+//
+//    showToast(notification.type, notification.message);
+//}
 function handleNotification(notification) {
     console.log("Получено уведомление:", notification);
 
-    // notification.type -> например "ARTIFACT_AWARDED"
-    // notification.message -> текст сообщения
+    // 1. Пытаемся вызвать глобальный обработчик, если он существует.
+    // Этот обработчик определен в инлайновом скрипте spell-cast.html
+    if (typeof window.onNotification === 'function') {
+        // Передаем весь объект уведомления (включая type и message)
+        window.onNotification(notification);
+    }
+    // Если страница не перехватила уведомление (например, на странице spell-cast.html
+    // она перехватит GUILD_UPGRADE_AVAILABLE), или если глобальный обработчик
+    // не существует, то просто показываем стандартный тост.
+    else {
+        // 2. Показываем стандартный Toast для всех уведомлений
+        showToast(notification.type, notification.message);
+    }
 
-    showToast(notification.type, notification.message);
+    // ВАЖНО: Если window.onNotification не определена на текущей странице,
+    // то будет вызван только showToast.
+    // Если на странице spell-cast.html window.onNotification определена,
+    // то она может решить, показывать ли toast, или показать специальный UI.
+    // Если нужно, чтобы стандартный toast показывался ВСЕГДА, то верните showToast
+    // после вызова window.onNotification, но лучше дать возможность onNotification
+    // решать, что делать.
 }
 
 function showToast(type, message) {

@@ -86,6 +86,16 @@ const api = {
     }),
 
     getGuildsByLevel: (level) => apiRequest(`/guilds?level=${level}`),
+
+    getAvailableGuilds: () => apiRequest('/guilds/available'),
+
+        // НОВЫЙ МЕТОД: Переход в гильдию (предполагаем, что эндпоинт POST /guilds/upgrade)
+    upgradeGuild: (newGuildId) => apiRequest('/guilds/join', {
+           method: 'POST',
+           // ВАЖНО: Тело запроса должно соответствовать GuildJoinRequest: { "guildId": 123 }
+           body: JSON.stringify({ guildId: newGuildId })
+       }),
+
     castSpell: (spellId, victimId, expireTime) => apiRequest('/temlates/spells/cast', {
         method: 'POST',
         body: JSON.stringify({ spellId, victimId, expireTime })
