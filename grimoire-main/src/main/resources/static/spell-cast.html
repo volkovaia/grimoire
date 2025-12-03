@@ -170,7 +170,7 @@
     const closeButton = document.getElementById('closeGuildUpgrade');
     const upgradeMessage = document.getElementById('guildUpgradeMessage');
 
-    /**
+   /**
      * Загружает доступные гильдии через API и показывает окно выбора.
      */
     async function showGuildUpgradeChoice() {
@@ -181,8 +181,37 @@
         guildUpgradeContainer.style.display = 'block';
 
         try {
-            // Используем новый API-метод getAvailableGuilds
-            const availableGuilds = await api.getAvailableGuilds();
+            // 1. Попытка получить доступные гильдии через основной эндпоинт
+            let availableGuilds = await api.getAvailableGuilds();
+
+            // 💡 ИСПРАВЛЕНИЕ: Если основной API (функция available_guilds) не дал результат,
+            // делаем резервный запрос, чтобы показать хоть что-то для перехода.
+            if (!Array.isArray(availableGuilds) || availableGuilds.length === 0) {
+                console.warn("API /guilds/available вернул пустой список. Попытка определить следующий уровень.");
+
+                let currentLevel = 0;
+                try {
+                    // Получаем данные мага, чтобы узнать его текущий уровень
+                    const wizard = await api.getWizard();
+                    // Если маг состоит в гильдии, берем ее уровень. Если не состоит, уровень 0.
+                    currentLevel = wizard.guild ? wizard.guild.level : 0;
+                } catch(e) {
+                    console.error("Не удалось получить данные мага:", e);
+                    // Оставляем currentLevel = 0 в случае ошибки
+                }
+
+                const nextLevel = currentLevel + 1;
+
+                // Проверяем, что следующий уровень не превышает максимальный уровень в БД (по картинке max level 4)
+                if (nextLevel > 0 && nextLevel <= 4) {
+                    console.log(`Резервная загрузка гильдий уровня ${nextLevel}...`);
+                    // Используем API-метод getGuildsByLevel, который работает с репозиторием findByLevel
+                    availableGuilds = await api.getGuildsByLevel(nextLevel);
+                } else {
+                     console.log(`Нет доступных гильдий для перехода (следующий уровень: ${nextLevel}).`);
+                }
+            }
+            // Конец КОРРЕКТИРОВКИ
 
             let options = '<option value="">-- Выберите новую гильдию --</option>';
             if (Array.isArray(availableGuilds) && availableGuilds.length > 0) {
