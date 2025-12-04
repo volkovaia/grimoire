@@ -23,7 +23,7 @@
 </div>
 
 <div style="text-align: center; margin-bottom: 30px;">
-    <p><i class="fas fa-building"></i> Гильдия ID: <span id="guild"></span></p>
+    <p><i class="fas fa-building"></i> Гильдия: <span id="guild"></span></p>
 </div>
 
 <div class="info-box">
@@ -65,7 +65,6 @@
                 checkAuth();
                 displayFallbackName();
 
-                // 1. Загружаем данные мага
                 const wizard = await api.getWizard();
                 console.log('Данные мага:', wizard); // Полезно для отладки
 
@@ -73,10 +72,10 @@
 
                 document.getElementById('wizardName').textContent = wizard.login;
 
-                // ИСПРАВЛЕНИЕ 1: Гильдия - это объект, а не просто ID
                 if (wizard.guild) {
                     // Выведем Название и ID. Например: "Орден Феникса (ID: 1)"
-                    document.getElementById('guild').textContent = `${wizard.guild.name} (ID: ${wizard.guild.id})`;
+<!--                    document.getElementById('guild').textContent = `${wizard.guild.name} (ID: ${wizard.guild.id})`;-->
+                    document.getElementById('guild').textContent = `${wizard.guild.name}`;
                 } else {
                     document.getElementById('guild').textContent = 'Нет гильдии';
                 }
@@ -88,8 +87,6 @@
                 const spellList = spells.content || spells;
 
                 renderList('spellsList', spellList, spell => {
-                    // ИСПРАВЛЕНИЕ 2: Приводим тип к нижнему регистру для проверки (ATTACK -> attack)
-                    // И проверяем поле spell.type вместо spell.spellType
                     const type = (spell.type || '').toLowerCase();
 
                     const icon = type === 'attack' ? 'fa-fire-alt' :
@@ -100,7 +97,6 @@
                         type === 'defense' ? '#4caf50' :
                             type === 'utility' ? '#2196f3' : '#9c27b0';
 
-                    // ИСПРАВЛЕНИЕ 3: Используем spell.name и spell.description
                     return `<li>
                     <i class="fas ${icon}" style="margin-right:8px;color:${color};" title="${spell.description || ''}"></i>
                     <strong>${spell.name}</strong>
@@ -113,7 +109,6 @@
                 const artifactList = artifacts.content || artifacts;
 
                 renderList('artifactsList', artifactList, a =>
-                    // ИСПРАВЛЕНИЕ 4: Используем a.name вместо a.artifactName
                     `<li><i class="fas fa-gem" style="margin-right:8px;color:#ffd700;"></i> ${a.name}</li>`
                 );
 

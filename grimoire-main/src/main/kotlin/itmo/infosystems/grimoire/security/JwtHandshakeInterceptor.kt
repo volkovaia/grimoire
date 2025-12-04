@@ -28,7 +28,7 @@ class JwtHandshakeInterceptor(
             ?: return false
 
         val wizardId = jwtService.getWizardId(token) ?: return false
-        //attributes["user"] = Principal { wizardId.toString() }
+
         attributes["user"] = UsernamePasswordAuthenticationToken(
                 wizardId.toString(),
                 null,

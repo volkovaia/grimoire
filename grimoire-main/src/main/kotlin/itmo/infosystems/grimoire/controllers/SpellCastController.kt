@@ -15,14 +15,6 @@ import java.security.Principal
 @RequestMapping("/temlates/spells")
 class SpellCastController(private val spellCastService: SpellCastService) {
 
-//    @PostMapping("/cast")
-//    fun castSpell(
-//        @AuthenticationPrincipal principal: Principal,
-//        @RequestBody request: SpellCastRequest
-//    ): SpellCast {
-//        return spellCastService.castSpell(principal.name.toLong(), request)
-//    }
-
     @PostMapping("/cast")
     fun castSpell(principal: Principal?, @RequestBody request: SpellCastRequest): ResponseEntity<SpellCastResponse> {
         // 1. ИСПРАВЛЕНИЕ ОШИБКИ 500: Проверка Principal на null
@@ -30,22 +22,20 @@ class SpellCastController(private val spellCastService: SpellCastService) {
                 ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User must be authenticated to cast spells")
 
         // 2. Вызов сервиса для выполнения логики
-        // Предполагается, что spellCastService.castSpell возвращает сущность SpellCast
         val newSpellCast: SpellCast = spellCastService.castSpell(wizardId, request)
 
         // 3. Преобразование сущности SpellCast в SpellCastResponse DTO
         val response = SpellCastResponse(
                 castId = newSpellCast.id,
-                status = newSpellCast.status.name, // Преобразование ENUM в String
+                status = newSpellCast.status.name,
                 castTime = newSpellCast.castTime,
                 expireTime = newSpellCast.expireTime,
                 spellId = newSpellCast.spell.id,
-                spellName = newSpellCast.spell.name, // Предполагается, что Spell имеет поле 'name'
+                spellName = newSpellCast.spell.name,
                 victimId = newSpellCast.victim.id,
-                victimName = newSpellCast.victim.name // Предполагается, что Human имеет поле 'name'
+                victimName = newSpellCast.victim.name
         )
 
-        // 4. Возврат успешного ответа
         return ResponseEntity.ok(response)
     }
 

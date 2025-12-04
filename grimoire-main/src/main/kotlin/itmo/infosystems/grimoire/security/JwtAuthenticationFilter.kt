@@ -23,7 +23,6 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
 
         val token = authHeader.substring(7)
         if (jwtService.validateToken(token)) {
-            //val wizardId = jwtService.getWizardId(token) ?: return filterChain.doFilter(request, response)
             val wizardId = jwtService.getWizardId(token) ?: return filterChain.doFilter(request, response)
 
             val authentication = UsernamePasswordAuthenticationToken(

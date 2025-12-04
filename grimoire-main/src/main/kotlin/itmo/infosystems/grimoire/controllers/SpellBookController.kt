@@ -22,24 +22,7 @@ class SpellBookController(private val spellService: SpellService) {
     }
 
     @GetMapping("/my-spellbook")
-//    fun getMySpellBook(
-//        principal: Principal?,
-//        pageable: Pageable
-//    ): ResponseEntity<Any> {
-//
-//        // 1. Проверяем, пришел ли токен
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "Unauthorized"))
-//        }
-//
-//        return try {
-//            val wizardId = principal.name.toLong()
-//            val spellBook = spellService.getAvailableSpells(wizardId, pageable)
-//            ResponseEntity.ok(spellBook)
-//        } catch (e: Exception) {
-//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
-//        }
-//    }
+
     fun getMySpellBook(
             @AuthenticationPrincipal wizardId: String,
             pageable: Pageable

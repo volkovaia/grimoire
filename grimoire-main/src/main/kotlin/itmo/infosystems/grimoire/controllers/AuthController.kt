@@ -23,26 +23,5 @@ class AuthController(private val authService: AuthService) {
     fun login(@Valid @RequestBody request: LoginRequest): AuthResponse {
         return authService.login(request)
     }
-//@PostMapping("/login")
-//fun login(@RequestBody request: LoginRequest): ResponseEntity<LoginResponse> {
-//    val token = authService.authenticate(request.login, request.password)
-//
-//    // Получаем данные мага из базы по логину
-//    val wizard = wizardService.findByLogin(request.login)
-//            ?: return ResponseEntity.badRequest().body(LoginResponse(null, null))
-//
-//    return ResponseEntity.ok(LoginResponse(token, wizard))
-//}
-//
-//    data class LoginResponse(
-//            val token: String?,
-//            val wizard: Wizard? // ← вот это поле должно быть!
-//    )
-//
-//    data class Wizard(
-//            val id: Long,
-//            val login: String,
-//            val name: String,
-//            val surname: String
-//    )
+
 }

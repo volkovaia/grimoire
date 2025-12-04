@@ -13,21 +13,17 @@ import java.security.Principal
 @RequestMapping("/guilds")
 class GuildController(private val guildService: GuildService, private val wizardService: WizardService) {
 
-    // 1. НОВЫЙ МЕТОД: Обрабатывает GET /guilds?level=X
-    // Не требует @AuthenticationPrincipal, что соответствует публичному доступу для регистрации.
+
     @GetMapping
     fun getGuildsByLevel(@RequestParam level: Int): List<Guild> {
-        // Проверьте, что этот метод существует в вашем GuildService
         return guildService.getGuildsByLevel(level)
     }
 
-    // 2. Ваш существующий метод (требует аутентификации)
     @GetMapping("/available")
     fun getAvailableGuilds(@AuthenticationPrincipal wizardId: String): List<Guild> {
         return guildService.getAvailableGuilds(wizardId.toLong())
     }
 
-    // 3. НОВЫЙ МЕТОД: Обрабатывает POST /guilds/join для перехода в гильдию
     @PostMapping("/join")
     fun joinGuild(
             @AuthenticationPrincipal wizardId: String,

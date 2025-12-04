@@ -9,7 +9,6 @@ class GuildService(private val guildRepository: GuildRepository) {
     fun getAvailableGuilds(wizardId: Long) = guildRepository.findAvailableGuilds(wizardId)
 
     fun getGuildsByLevel(level: Int): List<Guild> {
-        // Вызываем новый метод репозитория
         return guildRepository.findByLevel(level)
     }
 }

@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*
 class VictimController(private val victimService: VictimService) {
 
     @GetMapping
-//    fun getAllVictims(): List<Human> {
-//        return victimService.getAll()
-//    }
 
     fun getAvailableVictims(@AuthenticationPrincipal wizardId: String): List<Human> {
         return victimService.getAvailable(wizardId.toLong())

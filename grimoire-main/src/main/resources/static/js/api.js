@@ -1,4 +1,3 @@
-// Единая точка доступа к API
 function getAuthToken() {
     return localStorage.getItem('token');
 }
@@ -37,8 +36,6 @@ async function apiRequest(url, options = {}) {
         try {
                     const error = await res.json();
 
-                    // 💡 ИСПРАВЛЕНИЕ: Пытаемся получить наиболее подробное сообщение об ошибке
-                    // Spring/Jackson часто использует поля 'error', 'message' или 'detail'
                     let serverMessage = error.error || error.message || (error.detail ? (error.detail.message || error.detail) : null);
 
                     // Если сообщение от PostgreSQL (как в логах) завернуто, извлекаем его
@@ -51,7 +48,6 @@ async function apiRequest(url, options = {}) {
                     }
 
                 } catch (e) {
-                    // Если ответ не JSON (например, пустой 400 или 500)
                     const text = await res.text();
                     errorText = `Ошибка: HTTP ${res.status}. ${text.substring(0, 100)}`;
                 }
@@ -66,7 +62,6 @@ const api = {
         method: 'POST',
         body: JSON.stringify({ login, password })
     }).then(response => {
-              // Предполагается, что ответ: { token: "..." }
               if (response.token) {
                   saveAuthToken(response.token); // СОХРАНЕНИЕ ТОКЕНА
               }
@@ -89,10 +84,8 @@ const api = {
 
     getAvailableGuilds: () => apiRequest('/guilds/available'),
 
-        // НОВЫЙ МЕТОД: Переход в гильдию (предполагаем, что эндпоинт POST /guilds/upgrade)
     upgradeGuild: (newGuildId) => apiRequest('/guilds/join', {
            method: 'POST',
-           // ВАЖНО: Тело запроса должно соответствовать GuildJoinRequest: { "guildId": 123 }
            body: JSON.stringify({ guildId: newGuildId })
        }),
 
@@ -107,7 +100,7 @@ const api = {
  * Асинхронно получает список Артефактов (Заклинаний) через аутентифицированный API
  * и заполняет элемент <select>.
  */
-async function loadArtifactsAndPopulateSelect(selectId) { // Переименовано для ясности
+async function loadArtifactsAndPopulateSelect(selectId) {
     const spellSelect = document.getElementById(selectId);
 
     if (!spellSelect) {
@@ -120,7 +113,6 @@ async function loadArtifactsAndPopulateSelect(selectId) { // Переимено�
 
         let spells = [];
 
-        // Адаптация для Spring Data REST (Page-объект)
         if (responseData._embedded && responseData._embedded.artifacts) {
             spells = responseData._embedded.artifacts;
         } else if (responseData.content) {
@@ -134,8 +126,7 @@ async function loadArtifactsAndPopulateSelect(selectId) { // Переимено�
             throw new Error(`Список заклинаний пуст или имеет некорректный формат.`);
         }
 
-        // 1.1. Заполнение <select>
-        spellSelect.innerHTML = '<option value="" disabled selected>-- Выберите заклинание --</option>';
+        spellSelect.innerHTML = '<option value="" disabled selected>— Выберите заклинание —</option>';
         spells.forEach(spell => {
             const option = document.createElement('option');
             option.value = spell.id;
@@ -176,15 +167,14 @@ async function loadSpellsForCasting(selectId) {
     try {
         const data = await api.getMySpells(0, 100);
 
-        selectElement.innerHTML = '<option value="">-- Выберите заклинание --</option>';
+        selectElement.innerHTML = '<option value="">— Выберите заклинание —</option>';
 
         if (data.content && data.content.length > 0) {
             data.content.forEach(spell => {
                 const option = document.createElement('option');
                 option.value = spell.id;
 
-                // 💡 ИСПРАВЛЕНИЕ: Формируем новый текст: Описание и Тип Жертвы
-                const victimType = getVictimTypeDisplay(spell.victimType || spell.victim_type); // Пробуем оба имени
+                const victimType = getVictimTypeDisplay(spell.victimType || spell.victim_type);
                 const description = spell.description || 'Нет описания';
 
                 // [ID] Имя (Описание. Жертва: [Тип])

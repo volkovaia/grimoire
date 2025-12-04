@@ -1,4 +1,3 @@
-// SpellCastResponse.kt
 package itmo.infosystems.grimoire.dto.responses
 
 import java.time.LocalDateTime
@@ -16,5 +15,5 @@ data class SpellCastResponse(
 
         // Данные о Жертве (Human)
         val victimId: Long,
-        val victimName: String // Предполагается, что в Human есть поле 'name'
+        val victimName: String
 )

@@ -17,27 +17,7 @@ import java.security.Principal
 class ArtifactController(private val artifactService: ArtifactService) {
 
     @GetMapping
-//    fun getArtifacts(
-//        principal: Principal?, // <--- Добавили знак вопроса
-//        pageable: Pageable
-//    ): ResponseEntity<Any> {
-//
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "Unauthorized"))
-//        }
-//
-//        return try {
-//            // Превращаем ID из строки в число
-//
-//            val wizardId = principal.name.toLong()
-//
-//            val inventory = artifactService.getArtifacts(wizardId, pageable)
-//
-//            ResponseEntity.ok(inventory)
-//        } catch (e: Exception) {
-//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
-//        }
-//    }
+
     fun getInventory(@AuthenticationPrincipal wizardId: String, pageable: Pageable): Page<Artifact> {
         return artifactService.getArtifacts(wizardId.toLong(), pageable)
     }

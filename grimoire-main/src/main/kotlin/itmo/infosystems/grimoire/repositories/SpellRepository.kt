@@ -39,19 +39,5 @@ interface SpellRepository : JpaRepository<Spell, Long> {
     @Query(value = FIND_SPELL_BOOK_QUERY, countQuery = FIND_SPELL_BOOK_COUNT_QUERY, nativeQuery = true)
     fun findAvailableSpellsByWizardId(@Param("wizardId") wizardId: Long, pageable: Pageable): Page<Spell>
 
-    //fun findAll(wizardId: Long, pageable: Pageable): Page<Spell>
-//
-//        @Query(
-//        value = """
-//            SELECT *
-//            FROM get_spellbook(:wizardId)
-//        """,
-//        countQuery = """
-//            SELECT COUNT(*)
-//            FROM get_spellbook(:wizardId)
-//        """,
-//        nativeQuery = true
-//    )
-//
-//    fun findAll(wizardId: Long, pageable: Pageable): Page<Spell>
+
 }

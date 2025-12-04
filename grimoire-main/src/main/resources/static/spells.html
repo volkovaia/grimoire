@@ -85,8 +85,7 @@
 
                 const descriptionHtml = `<br><span style="font-size: 0.9em; color: #aaa; font-style: italic;">${spell.description || 'Нет описания.'}</span>`;
 
-                // 💡 ИСПРАВЛЕНИЕ 1: Добавляем victimType из бэкенда (предполагаем camelCase)
-                // Если не работает, попробуйте spell.victim_type
+
                 const victimTypeDisplay = getVictimTypeHtml(spell.victimType);
 
                 const actionBtn = isAvailable
@@ -108,7 +107,7 @@
 
                 }[spell.type] || `<span>${spell.type}</span>`;
 
-                // 💡 ИСПРАВЛЕНИЕ: Удаляем столбец "Действие"
+
                 return `
                     <tr>
                         <td>${spell.name}${descriptionHtml}</td>
@@ -119,7 +118,7 @@
                 `;
             }).join('');
 
-            // 💡 ИСПРАВЛЕНИЕ: Обновляем заголовки таблицы (<thead>) - УБИРАЕМ "ДЕЙСТВИЕ"
+
             container.innerHTML = `
                 <table>
                     <thead>

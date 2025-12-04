@@ -20,27 +20,6 @@ class WizardController(private val wizardService: WizardService) {
         return wizardService.getWizard(wizardId.toLong())
     }
 
-//    fun getMe(principal: Principal?): ResponseEntity<Any> {
-//        // 1. Проверка на то, что пользователь залогинен
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to "Unauthorized"))
-//        }
-//
-//        return try {
-//            // 2. В токене у нас лежит ID (например, "2"), поэтому превращаем строку в Long
-//            val wizardId = principal.name.toLong()
-//
-//            // 3. Ищем мага по ID, а не по логину
-//            val wizard = wizardService.getWizard(wizardId)
-//
-//            ResponseEntity.ok(wizard)
-//        } catch (e: NumberFormatException) {
-//            // Это на случай, если вдруг в токене окажется не число
-//            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to "Invalid token data"))
-//        } catch (e: Exception) {
-//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
-//        }
-//    }
 
     @GetMapping("/{id}")
     fun getWizard(@PathVariable id: Long): Wizard {

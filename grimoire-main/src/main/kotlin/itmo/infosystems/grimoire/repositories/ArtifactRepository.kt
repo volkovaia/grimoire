@@ -15,16 +15,6 @@ interface ArtifactRepository : JpaRepository<WizardArtifact, Long> {
             @Param("wizardId") wizardId: Long,
             pageable: Pageable
     ): Page<Artifact>
-//    fun findArtifactsByWizardId(wizardId: Long, pageable: Pageable): Page<Artifact>
 
-//    @Query("""
-//        SELECT wa.artifact
-//        FROM WizardArtifact wa
-//        WHERE wa.wizard.id = :wizardId
-//    """)
-//    fun findArtifactsByWizardId(
-//            @Param("wizard_id") wizardId: Long,
-//            pageable: Pageable
-//    ): Page<Artifact>
 
 }
